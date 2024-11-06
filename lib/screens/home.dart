@@ -24,14 +24,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: blanc,
         title: Row(
           children: [
             Image.asset(
-              'assets/images/logo.png', // Use your logo image here
+              'assets/images/logo.png', 
               height: 40,
             ),
            const SizedBox(width: 10),
-            const Text('DjaamYadee'),
+            const Text('DjaamYadee', style: TextStyle(color: bleu, fontWeight: FontWeight.bold),),
           ],
         ),
         bottom: TabBar(
@@ -50,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         controller: _tabController,
         children: [
           // Voyage Tab content
-          VoyageForm(),
+        const VoyageForm(),
          ColisTabScreen(),
         const LocationScreen()
         ],

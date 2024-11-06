@@ -25,6 +25,7 @@ class _VoyageFormState extends State<VoyageForm> {
     String? idDest;
      bool isLoading = true;
      int? id;
+     int? idD;
 
   @override
   void initState() {
@@ -51,19 +52,23 @@ class _VoyageFormState extends State<VoyageForm> {
   }
 }
 
-     Future<void> fetchZoneDestination(id) async {
+     Future<List<Map<String, dynamic>>> fetchZoneDestination(id) async {
   try {
-    final response = await http.get(Uri.parse("http://192.168.63.1/php/yade_back_end/zone_destination.php?idDepart=$idDepart"));
+    final response = await http.get(Uri.parse("http://192.168.63.1/php/yade_back_end/zone_destination.php?idDepart=$id"));
     if (response.statusCode == 200) {
       List<dynamic> levelsJson = json.decode(response.body);
       destinationList = levelsJson.cast<Map<String, dynamic>>(); // Convertir en liste de maps
+      return destinationList; // Return the updated destinationList
     } else {
       print("Erreur de statut de réponse: ${response.statusCode}");
+      return []; // Return an empty list in case of error
     }
   } catch (e) {
     print("Erreur lors du chargement des zones de destination: $e");
+    return []; // Return an empty list in case of exception
   }
-  }
+}
+
 
   // Future<void> fetchLevels() async {
   //   try {
@@ -147,7 +152,7 @@ class _VoyageFormState extends State<VoyageForm> {
   Autocomplete<String>(
   optionsBuilder: (TextEditingValue textEditingValue) {
     if (textEditingValue.text.isEmpty) {
-      return const Iterable<String>.empty();
+      return departList.map((element) => element['libelle'] as String);
     }
 
     // Filtrer les résultats en fonction de l'entrée de l'utilisateur
@@ -165,6 +170,13 @@ class _VoyageFormState extends State<VoyageForm> {
   },
   fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
     return TextFormField(
+      validator: (val) {
+                      if (val == null || val.isEmpty) {
+                        return "Veuillez choisir une ville de départ";
+                      } else {
+                        return null;
+                      }
+                      },
       controller: controller,
       focusNode: focusNode,
       decoration: InputDecoration(
@@ -220,10 +232,21 @@ class _VoyageFormState extends State<VoyageForm> {
 
     if (selectedElement.isNotEmpty) {
       idDepart = selectedElement['idLevel'].toString();
+      setState(() {
+        
       id = int.tryParse(idDepart!); // Assign `id` by parsing `idDepart`
+       destinationList = []; // Effacer la liste actuelle des destinations avant de charger de nouvelles données
+
+      });
       print('Vous avez sélectionné: $selection, idLevel associé: $idDepart');
-      fetchZoneDestination(id!);
-    } else {
+ // Fetch new destinations based on the selected `idDepart`
+    fetchZoneDestination(id!).then((newDestinations) {
+      setState(() {
+        destinationList = newDestinations; // Mettez à jour la liste des destinations
+        print("new liste" + destinationList.toString());
+      });
+    });
+        } else {
       print('Aucun idLevel trouvé pour le libelle sélectionné.');
     }
    
@@ -250,7 +273,8 @@ class _VoyageFormState extends State<VoyageForm> {
   Autocomplete<String>(
   optionsBuilder: (TextEditingValue textEditingValue) {
     if (textEditingValue.text.isEmpty) {
-      return const Iterable<String>.empty();
+         // Retourne tous les libellés si aucun texte n'est saisi
+      return destinationList.map((element) => element['libelle'] as String);
     }
 
     // Filtrer les résultats en fonction de l'entrée de l'utilisateur
@@ -268,6 +292,13 @@ class _VoyageFormState extends State<VoyageForm> {
   },
   fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
     return TextFormField(
+      validator: (val) {
+                      if (val == null || val.isEmpty) {
+                        return "Veuillez choisir une ville de destination";
+                      } else {
+                        return null;
+                      }
+                      },
       controller: controller,
       focusNode: focusNode,
       decoration: InputDecoration(
@@ -323,7 +354,7 @@ class _VoyageFormState extends State<VoyageForm> {
 
     if (selectedElement.isNotEmpty) {
       idDest = selectedElement['idLevel'].toString();
-      id = int.tryParse(idDest!); // Assign `id` by parsing `idDepart`
+      idD = int.tryParse(idDest!); // Assign `id` by parsing `idDepart`
       print('Vous avez sélectionné: $selection, idLevel associé: $idDest');
     } else {
       print('Aucun idLevel trouvé pour le libelle sélectionné.');
@@ -373,7 +404,7 @@ class _VoyageFormState extends State<VoyageForm> {
                     onPressed: () {
                       // Action à effectuer lors de l'appui sur le bouton
                       if(formkey.currentState!.validate()){
-                        Get.to( const VoyageScreen(), transition: Transition.rightToLeftWithFade);
+                        Get.to(VoyageScreen(idDepart: id,idDest: idD, dateDepart: dateController.text,), transition: Transition.rightToLeftWithFade);
                       }
                     },
                     style: ElevatedButton.styleFrom(
