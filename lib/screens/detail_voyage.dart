@@ -35,39 +35,39 @@ class _DetailVoyageScreenState extends State<DetailVoyageScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.voyage['compagnieNom'],
+              widget.voyage['compagnieNom'] ?? "Compagnie inconnue",
               style:const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
             ),
            const Divider(),
-            buildDetailRow('Départ:', widget.voyage['departNom']),
-            buildDetailRow('Destination:', widget.voyage['destNom']),
-            buildDetailRow('Rendez-vous:', widget.voyage['rdv']),
-            buildDetailRow('Agence:', widget.voyage['agenceNom']),
-            buildDetailRow('Date de départ:', widget.voyage['dateDepart']),
-            buildDetailRow('Date d\'arrivée:', widget.voyage['dateArrivee']),
-            buildDetailRow('Heure:', widget.voyage['heure']),
-            buildDetailRow('Tarif:', '${widget.voyage['tarif']} F'),
+            buildDetailRow('Départ:', widget.voyage['departNom'] ?? "Inconnue"),
+            buildDetailRow('Destination:', widget.voyage['destNom'] ?? "Inconnue"),
+            buildDetailRow('Rendez-vous:', widget.voyage['rdv'] ?? "Inconnue"),
+            buildDetailRow('Agence:', widget.voyage['agenceNom'] ?? "Inconnue"),
+            buildDetailRow('Date de départ:', widget.voyage['dateDepart'] ?? "Inconnue"),
+            buildDetailRow('Date d\'arrivée:', widget.voyage['dateArrivee'] ?? "Inconnue"),
+            buildDetailRow('Heure:', widget.voyage['heure'] ?? "Inconnue"),
+            buildDetailRow('Tarif:', '${widget.voyage['tarif']} F' ?? "Inconnue"),
            const SizedBox(height: 10),
-            buildDetailRow('Places disponibles:', '${widget.voyage['nbPlace']}'),
-          const  Spacer(), // Prend tout l'espace disponible entre le contenu et le bouton
-            Center(
-              child: SizedBox(
-                width: double.infinity, // Prendre toute la largeur
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Logique pour réserver
-                    ScaffoldMessenger.of(context).showSnackBar(
-                     const SnackBar(content: Text('Réservation effectuée pour le voyage!', style: TextStyle(color: blanc),)),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: bleu, // Couleur de fond bleu
-                    padding: const EdgeInsets.symmetric(vertical: 15), // Padding vertical pour agrandir le bouton
-                  ),
-                  child:const Text('Réserver', style: TextStyle(fontSize: 18, color: blanc)), // Taille de texte
-                ),
-              ),
-            ),
+            buildDetailRow('Places disponibles:', '${widget.voyage['nbPlace'] ?? "Inconnue"}'),
+          // const  Spacer(), // Prend tout l'espace disponible entre le contenu et le bouton
+            // Center(
+            //   child: SizedBox(
+            //     width: double.infinity, // Prendre toute la largeur
+            //     child: ElevatedButton(
+            //       onPressed: () {
+            //         // Logique pour réserver
+            //         ScaffoldMessenger.of(context).showSnackBar(
+            //          const SnackBar(content: Text('Réservation effectuée pour le voyage!', style: TextStyle(color: blanc),)),
+            //         );
+            //       },
+            //       style: ElevatedButton.styleFrom(
+            //         backgroundColor: bleu, // Couleur de fond bleu
+            //         padding: const EdgeInsets.symmetric(vertical: 15), // Padding vertical pour agrandir le bouton
+            //       ),
+            //       child:const Text('Réserver', style: TextStyle(fontSize: 18, color: blanc)), // Taille de texte
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),

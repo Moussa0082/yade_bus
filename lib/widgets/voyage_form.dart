@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:yade_bus/constant/constantes.dart';
 import 'package:yade_bus/screens/voyage.dart';
 
 
@@ -38,14 +39,17 @@ class _VoyageFormState extends State<VoyageForm> {
 
  Future<void> fetchZoneDepart() async {
   try {
-    final response = await http.get(Uri.parse('http://192.168.63.1/php/yade_back_end/zone_depart.php'));
+    final response = await http.get(Uri.parse('$apiUrl/zone_depart.php'));
     if (response.statusCode == 200) {
       List<dynamic> levelsJson = json.decode(response.body);
       departList = levelsJson.cast<Map<String, dynamic>>(); // Convertir en liste de maps
+      print('Data: ${response.body}');
     } else {
       print("Erreur de statut de réponse: ${response.statusCode}");
     }
+          print('Data: ${response.body}');
   } catch (e) {
+
     // print("Erreur lors du chargement des zones de départ: $e");
     print("Error fetching data: $e");
 
@@ -54,7 +58,7 @@ class _VoyageFormState extends State<VoyageForm> {
 
      Future<List<Map<String, dynamic>>> fetchZoneDestination(id) async {
   try {
-    final response = await http.get(Uri.parse("http://192.168.63.1/php/yade_back_end/zone_destination.php?idDepart=$id"));
+    final response = await http.get(Uri.parse("$apiUrl/zone_destination.php?idDepart=$id"));
     if (response.statusCode == 200) {
       List<dynamic> levelsJson = json.decode(response.body);
       destinationList = levelsJson.cast<Map<String, dynamic>>(); // Convertir en liste de maps
@@ -72,7 +76,7 @@ class _VoyageFormState extends State<VoyageForm> {
 
   // Future<void> fetchLevels() async {
   //   try {
-  //     final response = await http.get(Uri.parse('http://192.168.63.1/php/yade_back_end/zone_depart.php'));
+  //     final response = await http.get(Uri.parse('http://api.yadebus.com/zone_depart.php'));
   //     if (response.statusCode == 200) {
   //       List<dynamic> levels = json.decode(response.body);
   //       departList = List<String>.from(levels);
@@ -387,13 +391,13 @@ class _VoyageFormState extends State<VoyageForm> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          validator: (val) {
-                      if (val == null || val.isEmpty) {
-                        return "Veuillez choisir une date";
-                      } else {
-                        return null;
-                      }
-                      }
+                      //     validator: (val) {
+                      // if (val == null || val.isEmpty) {
+                      //   return "Veuillez choisir une date";
+                      // } else {
+                      //   return null;
+                      // }
+                      // }
                         ),
                       ),
                     ),

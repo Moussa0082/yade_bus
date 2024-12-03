@@ -142,6 +142,7 @@ import 'package:shimmer/shimmer.dart';
 
   //Voyage Card
   Widget buildVoyageCard() {
+    
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10.0),

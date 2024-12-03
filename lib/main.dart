@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 import 'package:yade_bus/screens/splash.dart';
+import 'package:yade_bus/services/reservation_service.dart';
 
 void main() {
-  runApp(const MyApp());
+ runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ReservationService())
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  // This widget is the root of your application.  
   @override
   Widget build(BuildContext context) {
      return ScreenUtilInit(
@@ -21,11 +30,7 @@ class MyApp extends StatelessWidget {
       builder: (_ , child) {
     
      return  GetMaterialApp(
-      // initialRoute: '/splash', // Ou votre route initiale
-      // getPages: [
-      //   GetPage(name: '/splash', page: () => SplashScreen()),
-        // Ajoutez d'autres pages ici
-      // ],
+     
       debugShowCheckedModeBanner: false,
       defaultTransition: Transition.fade, // Ou n'importe quelle autre transition
       theme: ThemeData(
@@ -35,7 +40,6 @@ class MyApp extends StatelessWidget {
       ),
       home: const SplashScreen(),
   
-      
     );
      }
      );

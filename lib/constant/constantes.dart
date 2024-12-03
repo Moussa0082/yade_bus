@@ -15,4 +15,5 @@ const Color grayColor = Color(0xFF8D8D8E);
 
 const double defaultPadding = 16.0;
 
-const apiUrl = "http://185.98.136.230:8000/api/v1";
+const apiUrl = "http://api.yadebus.com";
+// const apiUrl = "http://10.0.2.2/php/yade_back_end";
