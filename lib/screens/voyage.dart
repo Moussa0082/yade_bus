@@ -5,10 +5,12 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http; // Importer le package http
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert'; // Pour la conversion JSON
 import 'package:yade_bus/constant/constantes.dart';
 import 'package:yade_bus/controller/nbplace_st_up.dart';
 import 'package:yade_bus/screens/detail_voyage.dart';
+import 'package:yade_bus/services/paiement_service.dart';
 import 'package:yade_bus/services/reservation_service.dart';
 import 'package:yade_bus/widgets/shimmer_effect.dart';
 import 'package:yade_bus/widgets/snack_bar.dart';
@@ -44,6 +46,34 @@ class _VoyageScreenState extends State<VoyageScreen> {
   }
 
 
+  Future<void> _loadVoyages() async {
+    setState(() => isLoading = true);
+    final data = await fetchVoyagesMS();
+    setState(() {
+      voyages = data;
+      isLoading = false;
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> fetchVoyagesMS() async {
+  try {
+    // Construire l'URL de l'API
+    final response = await http.get(Uri.parse(
+        '$apiUrl/voyage.php?idDepart=${widget.idDepart}&idDest=${widget.idDest}&dateDepart=${widget.dateDepart}'));
+    
+    if (response.statusCode == 200) {
+      // Convertir la réponse JSON en une liste de maps
+      final List<dynamic> data = json.decode(response.body);
+      return data.cast<Map<String, dynamic>>(); // Retourner les voyages
+    } else {
+      throw Exception('Erreur lors de la récupération des voyages');
+    }
+  } catch (e) {
+    print('Erreur: $e');
+    return []; // Retourner une liste vide en cas d'erreur
+  }
+}
+
 
  Future<void> fetchVoyages() async {
   try {
@@ -73,6 +103,7 @@ class _VoyageScreenState extends State<VoyageScreen> {
     });
   }
 }
+
  Future<void> fetchVoyagesWithoutShimmer() async {
   try {
     // Construire l'URL de l'API
@@ -123,22 +154,32 @@ class _VoyageScreenState extends State<VoyageScreen> {
                 return buildVoyageCard();
               },
             )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: voyages.length,
-              itemBuilder: (context, index) {
-                final voyageData = voyages[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: GestureDetector(
-                    onTap: () {
-                      Get.to(transition: Transition.downToUp, DetailVoyageScreen(voyage: voyageData));
-                    },
-                    child: VoyageCard(voyageData: voyageData),
-                  ),
-                );
-              },
-            ),
+          : RefreshIndicator(
+            color: bleu,
+            onRefresh: () async{
+           await _loadVoyages();
+            },
+            child: ListView.builder(
+                padding: const EdgeInsets.all(16.0),
+                itemCount: voyages.length,
+                itemBuilder: (context, index) {
+                  final voyageData = voyages[index];
+                  return voyages.isEmpty ? 
+                    Center(
+                      child: Text("Aucun voyage trouvé"),
+                    ) :
+                    Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: GestureDetector(
+                      onTap: () {
+                        Get.to(transition: Transition.downToUp, DetailVoyageScreen(voyage: voyageData));
+                      },
+                      child: VoyageCard(voyageData: voyageData),
+                    ),
+                  );
+                },
+              ),
+          ),
     );
   }
 }
@@ -148,7 +189,7 @@ class VoyageCard extends StatelessWidget {
 
   const VoyageCard({required this.voyageData});
 
-
+ 
    
 
   @override
@@ -192,8 +233,8 @@ class VoyageCard extends StatelessWidget {
                   ),
                   child: TextButton.icon(
                     onPressed: () {
-                      int vy = int.parse(voyageData["idVoyage"]);
-                      int nbPlace = int.parse(voyageData["nbPlace"]);
+                      int vy = voyageData["idVoyage"];
+                      int nbPlace = voyageData["nbPlace"];
                       print("Réservation pour ${voyageData["compagnieNom"]}");
                       _openDialog(context, vy, nbPlace);
                     },
@@ -283,6 +324,9 @@ class VoyageCard extends StatelessWidget {
   }
 }
 
+
+     final PaymentService paymentService = PaymentService();
+
         final _formKey = GlobalKey<FormState>();
   final _nomController = TextEditingController();
   final _prenomController = TextEditingController();
@@ -296,6 +340,44 @@ Future<void> _openDialog(BuildContext context, int idVoyage, int nbPlace) async 
   final _prenomController = TextEditingController();
   final _numeroController = TextEditingController();
   // final _adresseController = TextEditingController();
+
+  void openPaymentUrl(String url) async {
+      final Uri uri = Uri.parse(url);  // Conversion ici
+
+  if (await canLaunchUrl(uri)) {
+      await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,  // Ouvre dans le navigateur externe
+    );
+  } else {
+    throw 'Impossible de lancer $url';
+  }
+}
+
+  void handlePayment() async {
+    // String orderId = orderIdController.text;
+
+    // if (amount.isEmpty) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('Veuillez remplir tous les champs')),
+    //   );
+    //   return;
+    // }
+
+    try {
+      var result = await paymentService.initiatePayment("3");
+      String paymentUrl = result['payment_url'];
+
+      // Ouvrir la page de paiement
+      openPaymentUrl(paymentUrl);
+    } catch (e) {
+      Snack.error(titre: "Erreur", message: "$e");
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Erreur lors du paiement : $e')),
+      // );
+    }
+  }
+
   final _nbPlaceController = TextEditingController();
 
 
@@ -377,8 +459,12 @@ Future<void> _openDialog(BuildContext context, int idVoyage, int nbPlace) async 
     isScrollControlled: true,
     context: context,
     builder: (BuildContext context) {
+      return DraggableScrollableSheet(  // Utilisation pour mieux gérer le clavier
+      expand: false,
+      builder: (context, scrollController) {
       return SafeArea(
         child: SingleChildScrollView(
+          controller: scrollController,
           child: Form(
             key: _formKey,
             child: Padding(
@@ -489,9 +575,10 @@ TextFormField(
                   Center(
                     child: ElevatedButton(
                       onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          await _sendReservation(context, idVoyage, nbPlace);
-                        }
+                        // if (_formKey.currentState!.validate()) {
+                           handlePayment();
+                          // await _sendReservation(context, idVoyage, nbPlace);
+                        // }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
@@ -509,8 +596,11 @@ TextFormField(
             ),
           ),
         ),
-      );
-    },
+       );
+      }
+    );
+  }
+  
   );
 }
 

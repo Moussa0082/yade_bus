@@ -3,13 +3,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:yade_bus/screens/splash.dart';
+import 'package:yade_bus/services/paiement_service.dart';
 import 'package:yade_bus/services/reservation_service.dart';
 
 void main() {
  runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ReservationService())
+        ChangeNotifierProvider(create: (_) => ReservationService()),
+        ChangeNotifierProvider(create: (_) => PaymentService())
       ],
       child: const MyApp(),
     ),
