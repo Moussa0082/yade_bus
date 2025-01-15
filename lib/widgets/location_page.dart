@@ -49,6 +49,7 @@ class _LocationScreenState extends State<LocationScreen> {
     super.initState();
     // Timer de 3 secondes pour simuler le chargement
     Timer(const Duration(seconds: 3), () {
+      if(mounted)
       setState(() {
         isLoading = false;
       });

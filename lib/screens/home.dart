@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yade_bus/constant/constantes.dart';
+import 'package:yade_bus/screens/divertissement.dart';
 import 'package:yade_bus/widgets/colis_form.dart';
 import 'package:yade_bus/widgets/location_page.dart';
 import 'package:yade_bus/widgets/voyage_form.dart';
@@ -17,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -42,8 +43,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           controller: _tabController,
           tabs: const [
             Tab(text: 'Voyage'),
-            Tab(text: 'Colis'),
-            Tab(text: 'Location'),
+            // Tab(text: 'Colis'),
+            Tab(text: 'Divertissememts'),
           ],
         ),
       ),
@@ -52,8 +53,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         children: [
           // Voyage Tab content
         const VoyageForm(),
-         ColisTabScreen(),
-        const LocationScreen()
+        //  ColisTabScreen(),
+        DivertissementScreen()
+        // const LocationScreen()
         ],
       ),
     );

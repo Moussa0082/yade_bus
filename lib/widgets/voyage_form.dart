@@ -107,9 +107,9 @@ class _VoyageFormState extends State<VoyageForm> {
     },
   );
 
-  if (picked != null && picked != currentDate) {
+  if (picked != currentDate) {
     // Si une date a été sélectionnée, formater le mois et le jour avec deux chiffres
-    String formattedDate = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+    String formattedDate = "${picked!.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
 
     // Afficher la date formatée dans le TextFormField
     dateController.text = formattedDate;

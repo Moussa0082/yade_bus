@@ -5,10 +5,12 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http; // Importer le package http
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert'; // Pour la conversion JSON
 import 'package:yade_bus/constant/constantes.dart';
 import 'package:yade_bus/controller/nbplace_st_up.dart';
 import 'package:yade_bus/screens/detail_voyage.dart';
+import 'package:yade_bus/services/payment_service.dart';
 import 'package:yade_bus/services/reservation_service.dart';
 import 'package:yade_bus/widgets/shimmer_effect.dart';
 import 'package:yade_bus/widgets/snack_bar.dart';
@@ -27,15 +29,15 @@ class VoyageScreen extends StatefulWidget {
 class _VoyageScreenState extends State<VoyageScreen> {
   List<Map<String, dynamic>> voyages = [];
   bool isLoading = true; // Indicateur de chargement
-  
 
   @override
   void initState() {
     super.initState();
-    print("Id depart: ${widget.idDepart}, Id destination: ${widget.idDest}, Date depart: ${widget.dateDepart}");
+    print(
+        "Id depart: ${widget.idDepart}, Id destination: ${widget.idDest}, Date depart: ${widget.dateDepart}");
     fetchVoyages(); // Récupérer les données des voyages
     // Observer les changements de status
-        final StatusController controller = Get.put(StatusController());
+    final StatusController controller = Get.put(StatusController());
     controller.status.listen((status) {
       if (status == true) {
         fetchVoyagesWithoutShimmer(); // Exécuter cette méthode quand status devient true
@@ -43,66 +45,61 @@ class _VoyageScreenState extends State<VoyageScreen> {
     });
   }
 
-
-
- Future<void> fetchVoyages() async {
-  try {
-    // Construire l'URL de l'API
-    final response = await http.get(Uri.parse(
-        '$apiUrl/voyage.php?idDepart=${widget.idDepart}&idDest=${widget.idDest}&dateDepart=${widget.dateDepart}'));
+  Future<void> fetchVoyages() async {
+    try {
+      // Construire l'URL de l'API
+      final response = await http.get(Uri.parse(
+          '$apiUrl/voyage.php?idDepart=${widget.idDepart}&idDest=${widget.idDest}&dateDepart=${widget.dateDepart}'));
       // Affichez la réponse pour le débogage
-    print(response.body);
-    if (response.statusCode == 200) {
-      // Convertir la réponse JSON en une liste de maps
-      final List<dynamic> data = json.decode(response.body);
-     await Future.delayed(Duration(seconds: 1));
+      print(response.body);
+      if (response.statusCode == 200) {
+        // Convertir la réponse JSON en une liste de maps
+        final List<dynamic> data = json.decode(response.body);
+        await Future.delayed(Duration(seconds: 1));
 
-      
+        setState(() {
+          voyages = data.cast<
+              Map<String, dynamic>>(); // Mettre à jour la liste des voyages
+          isLoading = false; // Fin du chargement
+        });
+      } else {
+        // Gérer les erreurs
+        throw Exception('Erreur lors de la récupération des voyages');
+      }
+    } catch (e) {
+      print(e);
       setState(() {
-        voyages = data.cast<Map<String, dynamic>>(); // Mettre à jour la liste des voyages
-        isLoading = false; // Fin du chargement
+        isLoading = false; // Fin du chargement même en cas d'erreur
       });
-    } else {
-      // Gérer les erreurs
-      throw Exception('Erreur lors de la récupération des voyages');
     }
-  } catch (e) {
-    print(e);
-    setState(() {
-      isLoading = false; // Fin du chargement même en cas d'erreur
-    });
   }
-}
- Future<void> fetchVoyagesWithoutShimmer() async {
-  try {
-    // Construire l'URL de l'API
-    final response = await http.get(Uri.parse(
-        '$apiUrl/voyage.php?idDepart=${widget.idDepart}&idDest=${widget.idDest}&dateDepart=${widget.dateDepart}'));
+
+  Future<void> fetchVoyagesWithoutShimmer() async {
+    try {
+      // Construire l'URL de l'API
+      final response = await http.get(Uri.parse(
+          '$apiUrl/voyage.php?idDepart=${widget.idDepart}&idDest=${widget.idDest}&dateDepart=${widget.dateDepart}'));
       // Affichez la réponse pour le débogage
-    print(response.body);
-    if (response.statusCode == 200) {
-      // Convertir la réponse JSON en une liste de maps
-      final List<dynamic> data = json.decode(response.body);
+      print(response.body);
+      if (response.statusCode == 200) {
+        // Convertir la réponse JSON en une liste de maps
+        final List<dynamic> data = json.decode(response.body);
 
-      
-      setState(() {
-        voyages = data.cast<Map<String, dynamic>>(); // Mettre à jour la liste des voyages
-      });
-    } else {
-      // Gérer les erreurs
-      throw Exception('Erreur lors de la récupération des voyages');
+        setState(() {
+          voyages = data.cast<
+              Map<String, dynamic>>(); // Mettre à jour la liste des voyages
+        });
+      } else {
+        // Gérer les erreurs
+        throw Exception('Erreur lors de la récupération des voyages');
+      }
+    } catch (e) {
+      print(e);
     }
-  } catch (e) {
-    print(e);
-   
   }
-}
 
-  
   @override
   Widget build(BuildContext context) {
-
-
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -132,7 +129,9 @@ class _VoyageScreenState extends State<VoyageScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: GestureDetector(
                     onTap: () {
-                      Get.to(transition: Transition.downToUp, DetailVoyageScreen(voyage: voyageData));
+                      Get.to(
+                          transition: Transition.downToUp,
+                          DetailVoyageScreen(voyage: voyageData));
                     },
                     child: VoyageCard(voyageData: voyageData),
                   ),
@@ -148,23 +147,18 @@ class VoyageCard extends StatelessWidget {
 
   const VoyageCard({required this.voyageData});
 
-
-   
-
   @override
   Widget build(BuildContext context) {
-  
-  
- 
-   String formatDate(String? date) {
-    if (date == null || date.isEmpty) return "Non spécifiée";
-    try {
-      final parsedDate = DateTime.parse(date); // Format attendu: yyyy-MM-dd
-      return DateFormat('dd-MM-yyyy').format(parsedDate); // Formatage en jj-mm-aaaa
-    } catch (e) {
-      return "Format invalide";
+    String formatDate(String? date) {
+      if (date == null || date.isEmpty) return "Non spécifiée";
+      try {
+        final parsedDate = DateTime.parse(date); // Format attendu: yyyy-MM-dd
+        return DateFormat('dd-MM-yyyy')
+            .format(parsedDate); // Formatage en jj-mm-aaaa
+      } catch (e) {
+        return "Format invalide";
+      }
     }
-  }
 
     return Card(
       shape: RoundedRectangleBorder(
@@ -192,9 +186,14 @@ class VoyageCard extends StatelessWidget {
                   ),
                   child: TextButton.icon(
                     onPressed: () {
-                      int vy = int.parse(voyageData["idVoyage"]);
-                      int nbPlace = int.parse(voyageData["nbPlace"]);
-                      print("Réservation pour ${voyageData["compagnieNom"]}");
+                      int vy = voyageData["idVoyage"] is String
+                          ? int.parse(voyageData["idVoyage"])
+                          : voyageData["idVoyage"];
+                      int nbPlace = voyageData["nbPlace"] is String
+                          ? int.parse(voyageData["nbPlace"])
+                          : voyageData["nbPlace"];
+                      debugPrint(
+                          "Réservation pour ${voyageData["compagnieNom"]}");
                       _openDialog(context, vy, nbPlace);
                     },
                     icon: const Icon(
@@ -210,7 +209,8 @@ class VoyageCard extends StatelessWidget {
                       ),
                     ),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 6),
                       minimumSize: const Size(80, 30),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       shape: RoundedRectangleBorder(
@@ -283,14 +283,15 @@ class VoyageCard extends StatelessWidget {
   }
 }
 
-        final _formKey = GlobalKey<FormState>();
-  final _nomController = TextEditingController();
-  final _prenomController = TextEditingController();
-  final _numeroController = TextEditingController();
-  final _adresseController = TextEditingController();
-  final _nbPlaceController = TextEditingController();
+final _formKey = GlobalKey<FormState>();
+final _nomController = TextEditingController();
+final _prenomController = TextEditingController();
+final _numeroController = TextEditingController();
+final _adresseController = TextEditingController();
+final _nbPlaceController = TextEditingController();
 
-Future<void> _openDialog(BuildContext context, int idVoyage, int nbPlace) async {
+Future<void> _openDialog(
+    BuildContext context, int idVoyage, int nbPlace) async {
   final _formKey = GlobalKey<FormState>();
   final _nomController = TextEditingController();
   final _prenomController = TextEditingController();
@@ -298,80 +299,86 @@ Future<void> _openDialog(BuildContext context, int idVoyage, int nbPlace) async 
   // final _adresseController = TextEditingController();
   final _nbPlaceController = TextEditingController();
 
+  Future<void> _sendReservation(
+      BuildContext context, int idVoyage, int nbPlace) async {
+    final StatusController controller = Get.put(StatusController());
 
-
-  Future<void> _sendReservation(BuildContext context, int idVoyage, int nbPlace) async {
-  final StatusController controller = Get.put(StatusController());
-
-  // Vérifiez si les paramètres requis ne sont pas vides
-   ReservationService().addReservation(
-    idVoyage: idVoyage, telephone: _numeroController.text,
-     passager: "${_prenomController.text} ${_nomController.text}",
-      nbPlace:int.parse(_nbPlaceController.text)
-    ).then((response) {
-        Get.back(); // Ferme le dialogue si succès
+    // Vérifiez si les paramètres requis ne sont pas vides
+    ReservationService()
+        .addReservation(
+            idVoyage: idVoyage,
+            telephone: _numeroController.text,
+            passager: "${_prenomController.text} ${_nomController.text}",
+            nbPlace: int.parse(_nbPlaceController.text))
+        .then((response) {
+      Get.back(); // Ferme le dialogue si succès
       if (response.statusCode == 200) {
         controller.updateStatus(true);
         Snack.success(
-         titre:"Succès",
-         message: "Réservation effectuée avec succès !",
-        
+          titre: "Succès",
+          message: "Réservation effectuée avec succès !",
         );
       } else {
         // Affiche un message d'erreur sans fermer le dialogue
         Snack.error(
           titre: "Erreur",
-         message: "Une erreur est survenue veuillez réessayer plus tard",
+          message: "Une erreur est survenue veuillez réessayer plus tard",
         );
       }
     }).catchError((error) {
       // Gère les exceptions (par exemple, problème de connexion)
       Snack.error(
-       titre:"Erreur",
-       message:" Une erreur est survenue veuillez réessayer plus tard ",
+        titre: "Erreur",
+        message: " Une erreur est survenue veuillez réessayer plus tard ",
       );
     });
 
-  // try {
+    // try {
     print("Données envoyées: ${{
-  "idVoyage": idVoyage.toString(),
-  "passager": "${_prenomController.text} ${_nomController.text}",
-  "telephone": _numeroController.text,
-  "nbPlace": nbPlace.toString(),
-}}");
+      "idVoyage": idVoyage.toString(),
+      "passager": "${_prenomController.text} ${_nomController.text}",
+      "telephone": _numeroController.text,
+      "nbPlace": nbPlace.toString(),
+    }}");
 
+    //   if (response.statusCode == 200) {
+    //     print("body" + response.body);
+    //     AwesomeDialog(
+    //       context: context,
+    //       dialogType: DialogType.success,
+    //       animType: AnimType.scale,
+    //       title: 'Succès',
+    //       desc: 'Réservation réussie!',
+    //       btnOkOnPress: () {
+    //         controller.updateStatus(true);
+    //         Get.back();
+    //       },
+    //     ).show();
+    //   } else {
+    //     throw Exception("Erreur de réservation");
+    //   }
+    // } catch (e) {
+    //   AwesomeDialog(
+    //     context: context,
+    //     dialogType: DialogType.error,
+    //     animType: AnimType.scale,
+    //     title: 'Erreur',
+    //     desc: 'Une erreur est survenue. Veuillez réessayer.',
+    //     btnOkOnPress: () {
+    //       Get.back();
+    //     },
+    //   ).show();
+    // }
+  }
 
-  //   if (response.statusCode == 200) {
-  //     print("body" + response.body);
-  //     AwesomeDialog(
-  //       context: context,
-  //       dialogType: DialogType.success,
-  //       animType: AnimType.scale,
-  //       title: 'Succès',
-  //       desc: 'Réservation réussie!',
-  //       btnOkOnPress: () {
-  //         controller.updateStatus(true);
-  //         Get.back();
-  //       },
-  //     ).show();
-  //   } else {
-  //     throw Exception("Erreur de réservation");
-  //   }
-  // } catch (e) {
-  //   AwesomeDialog(
-  //     context: context,
-  //     dialogType: DialogType.error,
-  //     animType: AnimType.scale,
-  //     title: 'Erreur',
-  //     desc: 'Une erreur est survenue. Veuillez réessayer.',
-  //     btnOkOnPress: () {
-  //       Get.back();
-  //     },
-  //   ).show();
-  // }
-}
-
-
+  //  Fonction pour lancer l'URL dans le navigateur
+  void launchPaymentUrl(String url) async {
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url)); // Ouvre l'URL dans le navigateur par défaut
+    } else {
+      throw 'Impossible d\'ouvrir l\'URL $url';
+    }
+  }
 
   showModalBottomSheet(
     isScrollControlled: true,
@@ -416,91 +423,152 @@ Future<void> _openDialog(BuildContext context, int idVoyage, int nbPlace) async 
                   // Champs du formulaire...
                   Padding(
                     padding: const EdgeInsets.only(left: 10),
-                    child: Text("Prénom", style: TextStyle(color: Colors.black, fontSize: 18)),
+                    child: Text("Prénom",
+                        style: TextStyle(color: Colors.black, fontSize: 18)),
                   ),
                   TextFormField(
                     controller: _prenomController,
                     decoration: InputDecoration(
                       hintText: "Entrez votre prénom",
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
                     ),
                     keyboardType: TextInputType.text,
-                    validator: (value) => value!.isEmpty ? "Entrez votre prénom" : null,
+                    validator: (value) =>
+                        value!.isEmpty ? "Entrez votre prénom" : null,
                   ),
                   const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.only(left: 10),
-                    child: Text("Nom *", style: TextStyle(color: Colors.black, fontSize: 18)),
+                    child: Text("Nom *",
+                        style: TextStyle(color: Colors.black, fontSize: 18)),
                   ),
                   TextFormField(
                     controller: _nomController,
                     decoration: InputDecoration(
                       hintText: "Entrez votre nom",
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
                     ),
                     keyboardType: TextInputType.text,
-                    validator: (value) => value!.isEmpty ? "Entrez votre nom" : null,
+                    validator: (value) =>
+                        value!.isEmpty ? "Entrez votre nom" : null,
                   ),
                   const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.only(left: 10),
-                    child: Text("Numéro *", style: TextStyle(color: Colors.black, fontSize: 18)),
+                    child: Text("Numéro *",
+                        style: TextStyle(color: Colors.black, fontSize: 18)),
                   ),
 
-TextFormField(
-  controller: _numeroController,
-  decoration: InputDecoration(
-    hintText: "Entrez votre numéro de téléphone",
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-  ),
-  keyboardType: TextInputType.number, // Permet le clavier numérique
-  inputFormatters: [
-    FilteringTextInputFormatter.digitsOnly, // Autorise uniquement les chiffres
-  ],
-  validator: (value) {
-    if (value == null || value.isEmpty) {
-      return 'Le numéro est requis';
-    } else if (value.length < 8) {
-      return 'Minimum 8 chiffres requis';
-    } else if (value.length > 11) {
-      return 'Maximum 11 chiffres autorisés';
-    }
-    return null;
-  },
-),
-                 const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _numeroController,
+                    decoration: InputDecoration(
+                      hintText: "Entrez votre numéro de téléphone",
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    keyboardType:
+                        TextInputType.number, // Permet le clavier numérique
+                    inputFormatters: [
+                      FilteringTextInputFormatter
+                          .digitsOnly, // Autorise uniquement les chiffres
+                    ],
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Le numéro est requis';
+                      } else if (value.length < 8) {
+                        return 'Minimum 8 chiffres requis';
+                      } else if (value.length > 11) {
+                        return 'Maximum 11 chiffres autorisés';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.only(left: 10),
-                    child: Text("Nombre de places *", style: TextStyle(color: Colors.black, fontSize: 18)),
+                    child: Text("Nombre de places *",
+                        style: TextStyle(color: Colors.black, fontSize: 18)),
                   ),
                   TextFormField(
                     controller: _nbPlaceController,
-                     inputFormatters: [
-    FilteringTextInputFormatter.digitsOnly, // Autorise uniquement les chiffres
-  ],
+                    inputFormatters: [
+                      FilteringTextInputFormatter
+                          .digitsOnly, // Autorise uniquement les chiffres
+                    ],
                     decoration: InputDecoration(
                       hintText: "Nombre de places",
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
                     ),
                     keyboardType: TextInputType.number,
-                    validator: (value) => value!.isEmpty ? "Entrez le nombre de places" : null,
+                    validator: (value) =>
+                        value!.isEmpty ? "Entrez le nombre de places" : null,
                   ),
                   const SizedBox(height: 10),
                   Center(
                     child: ElevatedButton(
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
-                          await _sendReservation(context, idVoyage, nbPlace);
+                          void submitPayment() async {
+                            bool isLoading = false;
+                            isLoading = true;
+
+                            PaymentService()
+                                .processPayment(
+                                  productionDate: "2025-01-15",                             
+                              amount: 20000, // Montant à payer
+                              order_id: "merchant_123",
+                            )
+                                .then((paymentResponse) {
+                              isLoading = false;
+
+                              if (paymentResponse['status'] == "success") {
+                                // Redirigez l'utilisateur vers l'URL de paiement
+                                String paymentUrl =
+                                    paymentResponse['payment_url'];
+                                print("Redirection vers: $paymentUrl");
+
+                                // Utilisez un navigateur web ou une WebView pour afficher l'URL de paiement
+                                launchPaymentUrl(paymentUrl);
+                              } else {
+                                // Affichez une erreur si le paiement a échoué
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  content: Text(
+                                      'Échec du paiement: ${paymentResponse['message']}'),
+                                  backgroundColor: Colors.red,
+                                ));
+                              }
+                            }).catchError((error) {
+                              isLoading = false;
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                content: Text(
+                                    'Erreur de paiement. Veuillez vérifier votre connexion.'),
+                                backgroundColor: Colors.red,
+                              ));
+                            });
+                          }
+
+                          submitPayment();
+
+                          // await _sendReservation(context, idVoyage, nbPlace);
                         }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15)),
                         minimumSize: const Size(310, 45),
                       ),
                       child: const Text(
                         "Réserver",
-                        style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
