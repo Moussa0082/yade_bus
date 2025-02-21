@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:yade_bus/widgets/snack_bar.dart';
 
-class PaymentService {
+class PaymentService extends ChangeNotifier{
+
+
   Future<Map<String, dynamic>> processPayment({
     required int amount,
     required String order_id,
@@ -28,7 +31,7 @@ class PaymentService {
     // Définir l'URL complète de l'API (inclure http:// ou https://)
     var url = Uri.parse("https://api.orange.com/orange-money-webpay/ml/v1");
 
-    // Création des données de paiement (paymentData)
+    // Création des données de paiement (paymentData) 
     var paymentData = jsonEncode({
       'merchant_key': 'e8b7be44',
       'currency': 'XAF',
@@ -83,4 +86,6 @@ class PaymentService {
 
     return {"status": "failed", "message": "Erreur inconnue"};
   }
+
+  
 }

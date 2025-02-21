@@ -1,6 +1,10 @@
 plugins {
     id "com.android.application"
+    // START: FlutterFire Configuration
+    id 'com.google.gms.google-services'
+    // END: FlutterFire Configuration
     id "kotlin-android"
+    id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin' version '2.0.0' apply false
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -24,8 +28,9 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.example.yade_bus"
-    compileSdk flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
+    compileSdk 34
+    // ndkVersion flutter.ndkVersion
+    ndkVersion "25.1.8937393" // Add this line
     
 
     compileOptions {
@@ -42,28 +47,39 @@ android {
     }
 
     defaultConfig {
+
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.example.yade_bus"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion flutter.minSdkVersion
+        
+        // minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        multiDexEnabled true
     }
 
     buildTypes {
+         debug{
+            manifestPlaceholders = [appAuthRedirectScheme: "yadebus"]
+        }
         release {
             // TODO: Add your own signing config for the release build.
+            manifestPlaceholders = [appAuthRedirectScheme: "yadebus"]
+
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
         }
     }
-    // ndkVersion "25.1.8937393" // Add this line
 }
 
 flutter {
     source '../..'
 }
 
-dependencies {}
+dependencies {
+   implementation 'com.google.android.gms:play-services-maps:18.0.2'
+
+}

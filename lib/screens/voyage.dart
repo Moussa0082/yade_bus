@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +12,7 @@ import 'dart:convert'; // Pour la conversion JSON
 import 'package:yade_bus/constant/constantes.dart';
 import 'package:yade_bus/controller/nbplace_st_up.dart';
 import 'package:yade_bus/screens/detail_voyage.dart';
+import 'package:yade_bus/services/orange_money_service.dart';
 import 'package:yade_bus/services/payment_service.dart';
 import 'package:yade_bus/services/reservation_service.dart';
 import 'package:yade_bus/widgets/shimmer_effect.dart';
@@ -26,13 +29,15 @@ class VoyageScreen extends StatefulWidget {
   State<VoyageScreen> createState() => _VoyageScreenState();
 }
 
-class _VoyageScreenState extends State<VoyageScreen> {
+class _VoyageScreenState extends State<VoyageScreen>
+    with WidgetsBindingObserver {
   List<Map<String, dynamic>> voyages = [];
   bool isLoading = true; // Indicateur de chargement
-
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
     print(
         "Id depart: ${widget.idDepart}, Id destination: ${widget.idDest}, Date depart: ${widget.dateDepart}");
     fetchVoyages(); // Récupérer les données des voyages
@@ -43,6 +48,63 @@ class _VoyageScreenState extends State<VoyageScreen> {
         fetchVoyagesWithoutShimmer(); // Exécuter cette méthode quand status devient true
       }
     });
+  }
+
+  bool isPaymentInProgress = false;
+  Timer? timer;
+
+  void _showPaymentDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Statut du paiement'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    // Arrête d'observer l'état de l'application
+    WidgetsBinding.instance.removeObserver(this);
+    if (timer != null) {
+      timer!.cancel();
+    }
+    super.dispose();
+  }
+
+  // Détecte les changements d'état de l'application (en arrière-plan ou au premier plan)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final StatusController controller = Get.put(StatusController());
+    if (state == AppLifecycleState.paused) {
+      // L'utilisateur a quitté l'application (arrière-plan)
+      print('Utilisateur a quitté l\'application.');
+      controller.updateIsBrowserStatus(false);
+      if (timer != null) {
+        timer!.cancel();
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      // L'utilisateur est revenu à l'application
+      print('Utilisateur est de retour dans l\'application.');
+      controller.updateIsBrowserStatus(true);
+      OrangeMoneyService()
+          .checkPaymentStatus(controller.accessToken, controller.payToken,
+              controller.orderIds, controller.amounts)
+          .then((value) {
+        if (value == true) {}
+      });
+    }
   }
 
   Future<void> fetchVoyages() async {
@@ -125,6 +187,7 @@ class _VoyageScreenState extends State<VoyageScreen> {
               itemCount: voyages.length,
               itemBuilder: (context, index) {
                 final voyageData = voyages[index];
+
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: GestureDetector(
@@ -160,6 +223,15 @@ class VoyageCard extends StatelessWidget {
       }
     }
 
+    if (voyageData.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Center(
+          child: Text("Aucun voyage trouve"),
+        ),
+      );
+    }
+
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10.0),
@@ -167,117 +239,125 @@ class VoyageCard extends StatelessWidget {
       elevation: 3,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header avec nom de la compagnie et état
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  voyageData["compagnieNom"] ?? "Compagnie inconnue",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: bleu,
-                    borderRadius: BorderRadius.circular(20),
+        child: LayoutBuilder(builder: (context, snapshot) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header avec nom de la compagnie et état
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    voyageData["compagnieNom"] ?? "Compagnie inconnue",
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
-                  child: TextButton.icon(
-                    onPressed: () {
-                      int vy = voyageData["idVoyage"] is String
-                          ? int.parse(voyageData["idVoyage"])
-                          : voyageData["idVoyage"];
-                      int nbPlace = voyageData["nbPlace"] is String
-                          ? int.parse(voyageData["nbPlace"])
-                          : voyageData["nbPlace"];
-                      debugPrint(
-                          "Réservation pour ${voyageData["compagnieNom"]}");
-                      _openDialog(context, vy, nbPlace);
-                    },
-                    icon: const Icon(
-                      Icons.event_seat,
-                      size: 16,
-                      color: blanc,
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: bleu,
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    label: const Text(
-                      "Réserver",
-                      style: TextStyle(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        int vy = voyageData["idVoyage"] is String
+                            ? int.parse(voyageData["idVoyage"])
+                            : voyageData["idVoyage"];
+                        int tarif = voyageData["tarif"] is String
+                            ? int.parse(voyageData["tarif"])
+                            : voyageData["tarif"];
+                        int nbPlace = voyageData["nbPlace"] is String
+                            ? int.parse(voyageData["nbPlace"])
+                            : voyageData["nbPlace"];
+                        debugPrint(
+                            "Réservation pour ${voyageData["compagnieNom"]}");
+                        _openDialog(context, vy, tarif, nbPlace);
+                      },
+                      icon: const Icon(
+                        Icons.event_seat,
+                        size: 16,
                         color: blanc,
-                        fontSize: 14,
+                      ),
+                      label: const Text(
+                        "Réserver",
+                        style: TextStyle(
+                          color: blanc,
+                          fontSize: 14,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 6),
+                        minimumSize: const Size(80, 30),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 6),
-                      minimumSize: const Size(80, 30),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              // Informations de départ et d'arrivée
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    // crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Départ : ${voyageData["departNom"]}"),
+                      Text("Heure : ${voyageData["heure"]}"),
+                      Text("Date : ${formatDate(voyageData["dateDepart"])}"),
+                    ],
+                  ),
+                  Column(
+                    // crossAxisAlignmentß: CrossAxisAlignment.start,
+                    children: [
+                      Text("Dest : ${voyageData["destNom"]}"),
+                      Text("Heure : ${voyageData["harrivee"]}"),
+                      Text("Date : ${formatDate(voyageData["dateArrivee"])}"),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              // Ligne bleue avec icône de voiture au centre
+              Row(
+                children: [
+                  Expanded(
+                    child: Divider(
+                      thickness: 2,
+                      color: Colors.blue,
+                      endIndent: 8,
                     ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            // Informations de départ et d'arrivée
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Départ : ${voyageData["departNom"]}"),
-                    Text("Heure : ${voyageData["heure"]}"),
-                    Text("Date : ${formatDate(voyageData["dateDepart"])}"),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Arrivée : ${voyageData["destNom"]}"),
-                    Text("Heure : ${voyageData["harrivee"]}"),
-                    Text("Date : ${formatDate(voyageData["dateArrivee"])}"),
-                  ],
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            // Ligne bleue avec icône de voiture au centre
-            Row(
-              children: [
-                Expanded(
-                  child: Divider(
-                    thickness: 2,
-                    color: Colors.blue,
-                    endIndent: 8,
+                  Icon(Icons.directions_car, color: Colors.blue, size: 24),
+                  Expanded(
+                    child: Divider(
+                      thickness: 2,
+                      color: Colors.blue,
+                      indent: 8,
+                    ),
                   ),
-                ),
-                Icon(Icons.directions_car, color: Colors.blue, size: 24),
-                Expanded(
-                  child: Divider(
-                    thickness: 2,
-                    color: Colors.blue,
-                    indent: 8,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            // Tarif et nombre de places
-            Text(
-              "Tarif : ${voyageData["tarif"]} FCFA",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 5),
-            Text(
-              "Nombre de places disponible : ${voyageData["nbPlace"]}",
-              style: TextStyle(fontSize: 18),
-            ),
-          ],
-        ),
+                ],
+              ),
+              SizedBox(height: 10),
+              // Tarif et nombre de places
+              Text(
+                "Tarif : ${voyageData["tarif"]} FCFA",
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                "Nombre de places disponible : ${voyageData["nbPlace"]}",
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -291,13 +371,18 @@ final _adresseController = TextEditingController();
 final _nbPlaceController = TextEditingController();
 
 Future<void> _openDialog(
-    BuildContext context, int idVoyage, int nbPlace) async {
+    BuildContext context, int idVoyage, int tarif, int nbPlace) async {
   final _formKey = GlobalKey<FormState>();
   final _nomController = TextEditingController();
   final _prenomController = TextEditingController();
   final _numeroController = TextEditingController();
   // final _adresseController = TextEditingController();
   final _nbPlaceController = TextEditingController();
+
+  // OrangeMoneyService().makePayment(merchantKey: "e9afd305",
+  // orderId: "cmd_1", amount: 200000,
+  //  returnUrl: "https://yadebus.com", cancelUrl: "https://yadebus.com/webpaydev/cancel",
+  //   notifUrl: "https://yadebus.com/webpaydev/notif", reference: "ref-xyz.456");
 
   Future<void> _sendReservation(
       BuildContext context, int idVoyage, int nbPlace) async {
@@ -369,15 +454,6 @@ Future<void> _openDialog(
     //     },
     //   ).show();
     // }
-  }
-
-  //  Fonction pour lancer l'URL dans le navigateur
-  void launchPaymentUrl(String url) async {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url)); // Ouvre l'URL dans le navigateur par défaut
-    } else {
-      throw 'Impossible d\'ouvrir l\'URL $url';
-    }
   }
 
   showModalBottomSheet(
@@ -511,54 +587,34 @@ Future<void> _openDialog(
                     child: ElevatedButton(
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
-                          void submitPayment() async {
-                            bool isLoading = false;
-                            isLoading = true;
-
-                            PaymentService()
-                                .processPayment(
-                                  productionDate: "2025-01-15",                             
-                              amount: 20000, // Montant à payer
-                              order_id: "merchant_123",
-                            )
-                                .then((paymentResponse) {
-                              isLoading = false;
-
-                              if (paymentResponse['status'] == "success") {
-                                // Redirigez l'utilisateur vers l'URL de paiement
-                                String paymentUrl =
-                                    paymentResponse['payment_url'];
-                                print("Redirection vers: $paymentUrl");
-
-                                // Utilisez un navigateur web ou une WebView pour afficher l'URL de paiement
-                                launchPaymentUrl(paymentUrl);
-                              } else {
-                                // Affichez une erreur si le paiement a échoué
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  content: Text(
-                                      'Échec du paiement: ${paymentResponse['message']}'),
-                                  backgroundColor: Colors.red,
-                                ));
-                              }
-                            }).catchError((error) {
-                              isLoading = false;
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                content: Text(
-                                    'Erreur de paiement. Veuillez vérifier votre connexion.'),
-                                backgroundColor: Colors.red,
-                              ));
-                            });
+                          double frais =
+                              tarif * double.parse(_nbPlaceController.text);
+                          final StatusController controller =
+                              Get.put(StatusController());
+                          OrangeMoneyService()
+                              .makePayment(
+                                  merchantKey: "e9afd305",
+                                  amount: frais,
+                                  returnUrl: "https://yadebus.com",
+                                  cancelUrl:
+                                      "https://yadebus.com/webpaydev/cancel",
+                                  notifUrl:
+                                      "https://yadebus.com/webpaydev/notif",
+                                  reference: "ref-xyz.456")
+                              .then((value) => {});
+                          // Début de la vérification de l'utilisateur dans le navigateur
+                          if (controller.isUserInBrowser.value == true) {
+                            print(
+                                'L\'utilisateur est toujours dans le navigateur.');
+                          } else {
+                            // Arrêtez les vérifications lorsque l'utilisateur quitte le navigateur
+                            // await _sendReservation(context, idVoyage, nbPlace);
+                            print('L\'utilisateur a quitté le navigateur.');
                           }
-
-                          submitPayment();
-
-                          // await _sendReservation(context, idVoyage, nbPlace);
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: rouge,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15)),
                         minimumSize: const Size(310, 45),
@@ -581,7 +637,6 @@ Future<void> _openDialog(
     },
   );
 }
-
 
 // Future<void> _sendReservation(BuildContext context, int idVoyage, int nbPlace) async {
 //       final StatusController controller = Get.put(StatusController());
@@ -640,10 +695,3 @@ Future<void> _openDialog(
 //     ).show();
 //   }
 // }
-
-
-
-
-
-
- 

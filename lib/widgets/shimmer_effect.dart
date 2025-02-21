@@ -139,6 +139,103 @@ import 'package:shimmer/shimmer.dart';
     );
   }
 
+  // Shimmer divertissement card 
+  Widget buildShimmerDivertissementCard(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 0.75,
+        ),
+        itemCount: 6,
+        itemBuilder: (context, index) {
+          return Card(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Shimmer.fromColors(
+                  baseColor: Colors.grey.shade300,
+                  highlightColor: Colors.grey.shade100,
+                  child: Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.grey,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(15),
+                        topRight: Radius.circular(15),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Shimmer.fromColors(
+                          baseColor: Colors.grey.shade300,
+                          highlightColor: Colors.grey.shade100,
+                          child: Container(
+                              height: 20, width: 100, color: Colors.grey)),
+                      SizedBox(height: 8),
+                      Shimmer.fromColors(
+                          baseColor: Colors.grey.shade300,
+                          highlightColor: Colors.grey.shade100,
+                          child: Container(
+                              height: 15, width: 60, color: Colors.grey)),
+                      SizedBox(height: 8),
+                      Shimmer.fromColors(
+                          baseColor: Colors.grey.shade300,
+                          highlightColor: Colors.grey.shade100,
+                          child: Container(
+                              height: 15, width: 80, color: Colors.grey)),
+                    ],
+                  ),
+                )
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+
+//Shimmer categorie loading
+   Widget buildShimmerCategoryLoading() {
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.grey,
+                ),
+                SizedBox(height: 8),
+                Container(height: 10, width: 60, color: Colors.grey),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+
 
   //Voyage Card
   Widget buildVoyageCard() {

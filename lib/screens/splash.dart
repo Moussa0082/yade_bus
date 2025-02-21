@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:yade_bus/constant/constantes.dart';
 import 'package:yade_bus/screens/home.dart';
+import 'package:yade_bus/widgets/nav_bar.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,7 +12,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
   late AnimationController _logoController;
   late Animation<double> _logoAnimation;
   late AnimationController _textController;
@@ -26,14 +28,16 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       vsync: this,
       duration: const Duration(seconds: 1),
     );
-    _logoAnimation = CurvedAnimation(parent: _logoController, curve: Curves.easeIn);
+    _logoAnimation =
+        CurvedAnimation(parent: _logoController, curve: Curves.easeIn);
 
     // Text animation
     _textController = AnimationController(
       vsync: this,
-      duration:const Duration(seconds: 1),
+      duration: const Duration(seconds: 1),
     );
-    _textAnimation = CurvedAnimation(parent: _textController, curve: Curves.easeIn);
+    _textAnimation =
+        CurvedAnimation(parent: _textController, curve: Curves.easeIn);
 
     // Start the animations
     _logoController.forward().then((_) {
@@ -41,8 +45,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     });
 
     // Navigate to the home screen after a delay
-    Timer( const Duration(seconds: 4), () {
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+    Timer(const Duration(seconds: 4), () {
+      Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const BottomNavigationPage()));
     });
   }
 
@@ -56,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Main color of the app
+      backgroundColor: bleu, // Main color of the app
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -68,25 +73,25 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 height: 120, // Adjust size based on your logo
               ),
             ),
-           const SizedBox(height: 20),
+            const SizedBox(height: 20),
             FadeTransition(
               opacity: _textAnimation,
               child: const Text(
                 'Réservation de Billet',
-                style:  TextStyle(
-                  color: bleu,
+                style: TextStyle(
+                  color: blanc,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-           const SizedBox(height: 15),
+            const SizedBox(height: 15),
             FadeTransition(
               opacity: _textAnimation,
               child: const Text(
-                'chez DjaamYadee',
-                style:  TextStyle(
-                  color: bleu,
+                'chez Yade',
+                style: TextStyle(
+                  color: blanc,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
@@ -97,7 +102,4 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       ),
     );
   }
-
-
- 
 }
