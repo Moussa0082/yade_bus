@@ -17,8 +17,10 @@ import 'package:yade_bus/services/logement_service.dart';
 import 'package:yade_bus/services/messaging_service.dart';
 import 'package:yade_bus/services/notification_service.dart';
 import 'package:yade_bus/services/orange_money_service.dart';
+import 'package:yade_bus/services/paiement_service.dart';
 import 'package:yade_bus/services/reservation_service.dart';
 // import 'package:yade_bus/widgets/nav_bar.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +37,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => OrangeMoneyService()),
         ChangeNotifierProvider(create: (_) => EventsService()),
         ChangeNotifierProvider(create: (_) => LogementService()),
+
       ],
       child: const MyApp(),
     ),

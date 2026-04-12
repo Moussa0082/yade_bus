@@ -15,6 +15,7 @@ import 'package:yade_bus/controller/nbplace_st_up.dart';
 import 'package:yade_bus/screens/detail_voyage.dart';
 import 'package:yade_bus/services/orange_money_service.dart';
 import 'package:yade_bus/services/payment_service.dart';
+
 import 'package:yade_bus/services/reservation_service.dart';
 import 'package:yade_bus/widgets/shimmer_effect.dart';
 import 'package:yade_bus/widgets/snack_bar.dart';
@@ -84,6 +85,7 @@ class _VoyageScreenState extends State<VoyageScreen>
   Map<String, dynamic>? selectedAller;
   Map<String, dynamic>? selectedRetour;
 
+
   @override
   void dispose() {
     _sub?.cancel();
@@ -94,6 +96,7 @@ class _VoyageScreenState extends State<VoyageScreen>
     }
     super.dispose();
   }
+
 
   // Détecte les changements d'état de l'application (en arrière-plan ou au premier plan)
   @override
@@ -364,11 +367,13 @@ class _VoyageScreenState extends State<VoyageScreen>
     );
   }
 
+
   Widget buildVoyageCard() {
     return Card(
       child: ListTile(
         title: Text("Chargement..."),
         subtitle: Text("Chargement..."),
+
       ),
     );
   }
@@ -387,6 +392,7 @@ class _VoyageScreenState extends State<VoyageScreen>
     // orderId: "cmd_1", amount: 200000,
     //  returnUrl: "https://yadebus.com", cancelUrl: "https://yadebus.com/webpaydev/cancel",
     //   notifUrl: "https://yadebus.com/webpaydev/notif", reference: "ref-xyz.456");
+
 
     StreamSubscription? _sub;
     Future<void> _sendReservation(
@@ -457,6 +463,8 @@ class _VoyageScreenState extends State<VoyageScreen>
       context: context,
       builder: (BuildContext context) {
         return SafeArea(
+
+
           child: Form(
             key: _formKey,
             child: Padding(
@@ -581,6 +589,7 @@ class _VoyageScreenState extends State<VoyageScreen>
                   Center(
                     child: ElevatedButton(
                       onPressed: () async {
+
                         if (_formKey.currentState!.validate()) {
                           double frais =
                               tarif * double.parse(_nbPlaceController.text);
@@ -626,6 +635,7 @@ class _VoyageScreenState extends State<VoyageScreen>
                             // initUniLinks();
                           }
                         }
+
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: bleu,
@@ -650,4 +660,5 @@ class _VoyageScreenState extends State<VoyageScreen>
       },
     );
   }
+
 }
