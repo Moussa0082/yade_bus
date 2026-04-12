@@ -123,7 +123,7 @@ class _BusState extends State<Bus> {
     );
   }
 
-  // CARTE DE TRAJET (L'élément de la liste)
+  // CARTE DE TRAJET (L'élément de la liste) ttttt
   Widget _buildBusCard(
       String minutes, String start, String end, bool isSelected) {
     return Container(
