@@ -1,9 +1,38 @@
-allprojects {
+// allprojects {
+//      buildscript {
+//     // ext.kotlin_version = '1.9.0'  // Update to match your libraries
+//      dependencies {
+//         classpath 'com.android.tools.build:gradle:8.0.2'  // Updated AGP version
+//         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0" // Exemple de version Kotlin
+
+//     }
+// }
+//     repositories {
+//         google()
+//         mavenCentral()
+//     }
+// }
+// build.gradle (niveau racine du projet)
+
+buildscript {
     repositories {
-        google()
-        mavenCentral()
+        google()  // Dépôt pour les outils Android
+        mavenCentral()  // Dépôt Maven central pour Kotlin et d'autres dépendances
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.0.2'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0'
+        // Ajoutez d'autres dépendances nécessaires ici
     }
 }
+
+allprojects {
+    repositories {
+        google()  // Dépôt pour les outils Android
+        mavenCentral()  // Dépôt Maven central pour Kotlin et d'autres dépendances
+    }
+}
+
 
 rootProject.buildDir = '../build'
 subprojects {

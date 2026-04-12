@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yade_bus/constant/constantes.dart';
 
 class ReservationForm extends StatefulWidget {
   @override
@@ -47,7 +48,7 @@ class _ReservationFormState extends State<ReservationForm> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Formulaire de Réservation'),
-        backgroundColor: Colors.blue,
+        backgroundColor: bleuFoncer,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

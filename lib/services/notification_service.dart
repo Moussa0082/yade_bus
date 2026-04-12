@@ -13,7 +13,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('Handling a background message ${message.messageId}');
 }
 
-class NotificationService {
+class NotificationService extends ChangeNotifier{
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
@@ -113,7 +113,8 @@ class NotificationService {
               ),
               iOS: DarwinNotificationDetails(
                   presentAlert: true, presentBadge: true, presentSound: true)),
-          payload: message.data.toString());
+          payload: message.data.toString()
+          );
     }
   }
 

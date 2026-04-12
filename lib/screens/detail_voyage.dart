@@ -23,7 +23,7 @@ class _DetailVoyageScreenState extends State<DetailVoyageScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: blanc),
         ),
         centerTitle: true,
-        backgroundColor: bleu,
+        backgroundColor: bleuFoncer,
         title: const Text(
           'Détails du Voyage',
           style: TextStyle(color: blanc),
@@ -49,7 +49,7 @@ class _DetailVoyageScreenState extends State<DetailVoyageScreen> {
             buildDetailRow('Tarif:', '${widget.voyage['tarif']} F' ?? "Inconnue"),
            const SizedBox(height: 10),
             buildDetailRow('Places disponibles:', '${widget.voyage['nbPlace'] ?? "Inconnue"}'),
-          // const  Spacer(), // Prend tout l'espace disponible entre le contenu et le bouton
+            // const  Spacer(), // Prend tout l'espace disponible entre le contenu et le bouton
             // Center(
             //   child: SizedBox(
             //     width: double.infinity, // Prendre toute la largeur

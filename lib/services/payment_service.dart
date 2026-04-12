@@ -39,7 +39,7 @@ class PaymentService extends ChangeNotifier{
       'amount': amount,
       'productionDate': productionDate,
       "return_url": "https://yadebus.com",
-      "cancel_url": "ttps://yadebus.com/webpaydev/cancel",
+      "cancel_url": "https://yadebus.com/webpaydev/cancel",
       "notif_url": "https://yadebus.com/webpaydev/notif",
       'lang': 'fr',
       'reference': 'ref-xyz.456'

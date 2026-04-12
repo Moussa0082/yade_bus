@@ -1,13 +1,13 @@
-
 import 'package:flutter/material.dart';
+import 'package:yade_bus/constant/constantes.dart';
 
- class CarCard extends StatelessWidget {
+class CarCard extends StatelessWidget {
   final String name;
   final String brand;
   final String price;
   final String imageUrl;
 
-   CarCard({
+  CarCard({
     Key? key,
     required this.name,
     required this.brand,
@@ -27,6 +27,29 @@ import 'package:flutter/material.dart';
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Row(
+              children: [
+                Column(
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(color: Colors.black),
+                    ),
+                    const SizedBox(
+                      height: 5,
+                    ),
+                    Text(
+                      name,
+                      style: TextStyle(color: Colors.black),
+                    ),
+                    Row(
+                      children: [Icon(Icons.map)],
+                      
+                    )
+                  ],
+                ),
+              ],
+            ),
             Expanded(
               child: Image.asset(
                 imageUrl, // Replace with the actual image path
@@ -58,8 +81,8 @@ import 'package:flutter/material.dart';
               ],
             ),
             const SizedBox(height: 4),
-          const  Row(
-              children:  [
+            const Row(
+              children: [
                 Icon(Icons.av_timer, size: 16),
                 SizedBox(width: 4),
                 Text('Disponible'),

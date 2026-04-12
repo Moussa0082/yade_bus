@@ -4,14 +4,17 @@ import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 
 import 'package:provider/provider.dart';
 import 'package:yade_bus/constant/constantes.dart';
+import 'package:yade_bus/screens/accueil.dart';
 import 'package:yade_bus/screens/divertissement.dart';
 import 'package:yade_bus/screens/home.dart';
 import 'package:yade_bus/screens/map.dart';
+import 'package:yade_bus/screens/profil_page.dart';
 import 'package:yade_bus/widgets/colis_form.dart';
 import 'package:yade_bus/widgets/voyage_form.dart';
 
 class BottomNavigationPage extends StatefulWidget {
-  const BottomNavigationPage({super.key});
+  bool? isLogged;
+  BottomNavigationPage({super.key, required this.isLogged});
 
   @override
   State<BottomNavigationPage> createState() => _BottomNavigationPageState();
@@ -37,16 +40,16 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
 
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
     GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
+    // GlobalKey<NavigatorState>(),
+    // GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
   ];
   List pages = <Widget>[
-    VoyageForm(),
-    ColisTab(),
-    DivertissementScreen(),
-    DivertissementScreen(),
-    // const MapSreen()
+    Accueil(),
+    // VoyageForm(),
+    // DivertissementScreen(),
+    ProfilPage(),
+    // DivertissementScreen(),
   ];
 
   void _changeActivePageValue(int index) {
@@ -87,6 +90,7 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
     return Scaffold(
       backgroundColor: d_colorPage,
       appBar: AppBar(
+        backgroundColor: bleuFoncer,
         toolbarHeight: 0,
         elevation: 0,
       ),
@@ -98,8 +102,8 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
         children: [
           _buildOffstageNavigator(0),
           _buildOffstageNavigator(1),
-          _buildOffstageNavigator(2),
-          _buildOffstageNavigator(3)
+          // _buildOffstageNavigator(2),
+          // _buildOffstageNavigator(3)
         ],
       ),
       // },
@@ -110,23 +114,23 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
         items: const [
           BottomNavigationBarItem(
             backgroundColor: d_color,
-            icon: Icon(Icons.travel_explore_outlined),
-            label: "Voyage",
+            icon: Icon(Icons.home),
+            label: "Accueil",
           ),
+          // BottomNavigationBarItem(
+          //   backgroundColor: d_color,
+          //   icon: Icon(FeatherIcons.package),
+          //   label: "Colis",
+          // ),
+          // BottomNavigationBarItem(
+          //   backgroundColor: d_color,
+          //   icon: Icon(FeatherIcons.volume2),
+          //   label: "Events",
+          // ),
           BottomNavigationBarItem(
             backgroundColor: d_color,
-            icon: Icon(FeatherIcons.package),
-            label: "Colis",
-          ),
-          BottomNavigationBarItem(
-            backgroundColor: d_color,
-            icon: Icon(FeatherIcons.volume2),
-            label: "Events",
-          ),
-          BottomNavigationBarItem(
-            backgroundColor: d_color,
-            icon: Icon(CupertinoIcons.map),
-            label: "Map",
+            icon: Icon(CupertinoIcons.person),
+            label: "Agent",
           ),
         ],
         unselectedItemColor: Colors.black,
@@ -144,11 +148,10 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
     return {
       '/': (context) {
         return [
-          VoyageForm(),
-          ColisTab(),
-          DivertissementScreen(),
-          DivertissementScreen(),
-          // const MapSreen()
+          Accueil(),
+          // ColisTab(),
+          // DivertissementScreen(),
+          ProfilPage(),
         ].elementAt(index);
       },
     };

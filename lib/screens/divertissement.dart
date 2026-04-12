@@ -159,7 +159,7 @@ class _DivertissementScreenState extends State<DivertissementScreen>
 
     if (response.statusCode == 200 || response.statusCode == 200) {
       final String jsonString = utf8.decode(response.bodyBytes);
-      List<dynamic> body = json.decode(jsonString);
+      List<Map<String, dynamic>> body = json.decode(jsonString);
       setState(() {
         cities = body;
       });
@@ -192,6 +192,16 @@ class _DivertissementScreenState extends State<DivertissementScreen>
     fetchEvents();
   }
 
+  Map<String, IconData> categoryIcons = {
+    'Reel': Icons.video_call,
+    'Publication': Icons.grid_on,
+    'Story': Icons.add_circle_outline,
+    'Story à la une': Icons.favorite_border,
+    'En direct': Icons.wifi_tethering,
+    'Créé pour vous': Icons.auto_awesome,
+    // Ajoutez d'autres catégories et icônes ici
+  };
+
   @override
   void dispose() {
     _tabController
@@ -205,51 +215,114 @@ class _DivertissementScreenState extends State<DivertissementScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Divertissements'),
+        title: Text(
+          "Divertissement",
+          style: TextStyle(color: blanc),
+        ),
         centerTitle: true,
+        backgroundColor: bleuFoncer,
+        leading: IconButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            icon: const Icon(Icons.arrow_back_ios, color: blanc)),
         bottom: categorieList.isEmpty
             ? null
-            : PreferredSize(
-                preferredSize: const Size.fromHeight(40),
-                child: ClipRRect(
-                  child: Container(
-                    height: 40,
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      color: Colors.blue, // Utilisez votre couleur ici
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      labelColor: Colors.white,
-                      unselectedLabelColor: Colors.white.withOpacity(0.6),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      dividerColor: Colors.transparent,
-                      indicator: const BoxDecoration(
-                        color: Colors
-                            .blueAccent, // Changez cette couleur selon vos besoins
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
-                      ),
-                      onTap: (index) {
-                        // Met à jour la catégorie sélectionnée et récupère les événements
-                        setState(() {
-                          selectedCategory =
-                              categorieList[index]['idCategory'].toString();
-                        });
-                        categorieList[index]['idCategory'] != 'all'
-                            ? fetchCitiesForEvent(
-                                categorieList[index]['idCategory'])
-                            : fetchEventsByCategory(
-                                categorieList[index]['idCategory'].toString());
+            :
+//             PreferredSize(
+//   preferredSize: const Size.fromHeight(40),
+//   child: ClipRRect(
+//     child: Container(
+//       height: 40,
+//       margin: const EdgeInsets.symmetric(horizontal: 20),
+//       decoration: BoxDecoration(
+//         borderRadius: BorderRadius.all(Radius.circular(10)),
+//         border: Border.all(color: Colors.grey.shade300), // Bordure grise claire
+//       ),
+//       child: TabBar(
+//         controller: _tabController,
+//         labelColor: Colors.black, // Texte noir
+//         unselectedLabelColor: Colors.grey, // Texte gris pour les onglets non sélectionnés
+//         indicatorSize: TabBarIndicatorSize.tab,
+//         dividerColor: Colors.transparent,
+//         indicator: BoxDecoration(
+//           color: Colors.grey.shade200, // Fond gris clair pour l'onglet sélectionné
+//           borderRadius: BorderRadius.all(Radius.circular(10)),
+//         ),
+//         onTap: (index) {
+//           // Met à jour la catégorie sélectionnée et récupère les événements
+//           setState(() {
+//             selectedCategory = categorieList[index]['idCategory'].toString();
+//           });
+//           categorieList[index]['idCategory'] != 'all'
+//               ? fetchCitiesForEvent(categorieList[index]['idCategory'])
+//               : fetchEventsByCategory(categorieList[index]['idCategory'].toString());
 
-                        fetchEventsByCategory(
-                            categorieList[index]['idCategory'].toString());
-                      },
-                      tabs: categorieList
-                          .map((tab) => Container(child: Tab(text: tab['nom'])))
-                          .toList(),
-                    ),
+//           fetchEventsByCategory(categorieList[index]['idCategory'].toString());
+//         },
+//         tabs: categorieList.map((tab) {
+//           String tabName = tab['nom'];
+//           IconData icon = categoryIcons[tabName] ?? Icons.category; // Icône par défaut si non trouvée
+//           return Tab(
+//             child: Row(
+//               mainAxisAlignment: MainAxisAlignment.center,
+//               children: [
+//                 Icon(icon, size: 20),
+//                 SizedBox(width: 8),
+//                 Text(tabName),
+//               ],
+//             ),
+//           );
+//         }).toList(),
+//       ),
+//     ),
+//   ),
+// ),
+            PreferredSize(
+                preferredSize: const Size.fromHeight(40),
+                child: TabBar(
+                  controller: _tabController,
+                  labelColor: blanc, // Texte noir
+                  unselectedLabelColor:
+                      blanc, // Texte gris pour les onglets non sélectionnés
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: blanc,
+                  indicatorColor: blanc, // Supprime l'indicateur de couleur
+                  indicator: UnderlineTabIndicator(
+                    // Indicateur de soulignement simple
+                    borderSide:
+                        BorderSide(color: Colors.grey.shade400, width: 2.0),
                   ),
+                  onTap: (index) {
+                    // Met à jour la catégorie sélectionnée et récupère les événements
+                    setState(() {
+                      selectedCategory =
+                          categorieList[index]['idCategory'].toString();
+                    });
+                    categorieList[index]['idCategory'] != 'all'
+                        ? fetchCitiesForEvent(
+                            categorieList[index]['idCategory'])
+                        : fetchEventsByCategory(
+                            categorieList[index]['idCategory'].toString());
+
+                    fetchEventsByCategory(
+                        categorieList[index]['idCategory'].toString());
+                  },
+                  tabs: categorieList.map((tab) {
+                    String tabName = tab['nom'];
+                    IconData icon = categoryIcons[tabName] ??
+                        Icons.category; // Icône par défaut si non trouvée
+                    return Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(icon, size: 20),
+                          SizedBox(width: 8),
+                          Text(tabName),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
       ),
@@ -392,7 +465,7 @@ class _DivertissementScreenState extends State<DivertissementScreen>
                       return DropdownMenuItem<String>(
                         value: city['lieu'],
                         child: Text(
-                          city['lieu'],
+                          city['lieu'] != null ? city['lieu'] : "Inconnu",
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -557,7 +630,7 @@ class EntertainmentCard extends StatelessWidget {
                   Text(
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    events['nom']!,
+                    events['nom'] != null ? events['nom']! : "Inconnu",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -567,7 +640,7 @@ class EntertainmentCard extends StatelessWidget {
                   Text(
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    'Lieu : ${events['lieu']}',
+                    "Lieu : ${events['localisation'] != null ? events['localisation']! : "Inconnu"}",
                     style: TextStyle(color: bleuFoncer),
                   ),
                   SizedBox(height: 5),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_feather_icons/flutter_feather_icons.dart';
+import 'package:get/get.dart';
 import 'package:yade_bus/constant/constantes.dart';
 import 'package:yade_bus/screens/divertissement.dart';
+import 'package:yade_bus/screens/login/login.dart';
 import 'package:yade_bus/widgets/colis_form.dart';
-import 'package:yade_bus/widgets/location_page.dart';
+import 'package:yade_bus/widgets/location_voiture.dart';
 import 'package:yade_bus/widgets/voyage_form.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -27,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: bleu,
+        backgroundColor: bleuFoncer,
         title: Row(
           children: [
             Image.asset(
