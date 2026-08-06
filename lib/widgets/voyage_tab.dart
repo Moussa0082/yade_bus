@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:yade_bus/constant/constantes.dart';
 import 'package:yade_bus/screens/cancel_voyage.dart';
 import 'package:yade_bus/screens/map.dart';
 import 'package:yade_bus/screens/reporter_voyage.dart';
 import 'package:yade_bus/widgets/my_reservation_tab.dart';
-import 'package:yade_bus/widgets/user_reservation_list.dart';
-import 'package:yade_bus/widgets/voyage_form.dart';
 
 import 'new_voyage_form.dart';
 
@@ -113,205 +110,153 @@ class VoyageTab extends StatefulWidget {
 class _VoyageTabState extends State<VoyageTab> {
   int _selectedIndex = 0;
   final ScrollController _scrollController = ScrollController();
-  bool _canScrollLeft = false;
-  bool _canScrollRight =
-      true; // Initialisation supposant qu'il y a du contenu à droite
 
   final List<Map<String, dynamic>> _pages = [
     {
-      'title': 'Billet Voyage',
-      'icon': Icons.travel_explore,
-      'page': NewVoyageForm(), // Remplacez par votre page
+      'title': 'Billet',
+      'icon': Icons.travel_explore_rounded,
+      'page': NewVoyageForm(),
     },
     {
-      'title': 'Annuler Voyage',
-      'icon': Icons.cancel,
-      'page': CancelVoyage(), // Remplacez par votre page
+      'title': 'Annuler',
+      'icon': Icons.cancel_outlined,
+      'page': CancelVoyage(),
     },
     {
-      'title': 'Reporter Voyage',
-      'icon': Icons.calendar_today,
-      'page': ReporterVoyage(), // Remplacez par votre page
+      'title': 'Reporter',
+      'icon': Icons.edit_calendar_rounded,
+      'page': ReporterVoyage(),
     },
     {
-      'title': 'Agence proches',
-      'icon': Icons.location_on,
-      'page': MapScreen(), // Remplacez par votre page
+      'title': 'Agences',
+      'icon': Icons.location_on_rounded,
+      'page': MapScreen(),
     },
     {
-      'title': 'Mes reservations',
-      'icon': Icons.list_alt,
-      'page': TabbedPage(), // Remplacez par votre page
+      'title': 'Réservations',
+      'icon': Icons.receipt_long_rounded,
+      'page': TabbedPage(),
     },
   ];
 
   @override
-  void initState() {
-    super.initState();
-
-    _scrollController.addListener(_checkScroll);
-
-    // Vérifie la position après le rendu initial
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkScroll());
-  }
-
-  void _checkScroll() {
-    if (!_scrollController.hasClients) return;
-
-    setState(() {
-      _canScrollLeft = _scrollController.position.pixels > 0;
-      _canScrollRight = _scrollController.position.pixels <
-          _scrollController.position.maxScrollExtent;
-    });
-  }
-
-  void _scrollLeft() {
-    _scrollController.animateTo(
-      _scrollController.position.pixels - 100,
-      duration: Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  void _scrollRight() {
-    _scrollController.animateTo(
-      _scrollController.position.pixels + 100,
-      duration: Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => Get.back(),
-          icon: Icon(Icons.arrow_back_ios, color: blanc),
-        ),
-        centerTitle: true,
-        backgroundColor: bleuFoncer,
-        title: const Text(
-          'Yade',
-          style: TextStyle(
-            color: blanc,
-            fontWeight: FontWeight.bold,
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: Column(
+        children: [
+          _buildHeader(context),
+          _buildTabBar(),
+          Expanded(
+            child: _pages[_selectedIndex]['page'],
           ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(43),
-          child: Container(
-            height: 50,
-            decoration: BoxDecoration(color: blanc),
-            child: Stack(
-              children: [
-                // Liste défilante horizontale
-                Positioned.fill(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _pages.length,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: _selectedIndex == index ? bleuFoncer : bleu,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        margin:
-                            EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-                        child: InkWell(
-                          onTap: () => setState(() => _selectedIndex = index),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _pages[index]['icon'],
-                                color: _selectedIndex == index
-                                    ? blanc
-                                    : Colors.grey[200],
-                                size: 28,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                _pages[index]['title'],
-                                style: TextStyle(
-                                  color: _selectedIndex == index
-                                      ? blanc
-                                      : Colors.grey[200],
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                // Bouton Scroll à gauche (si nécessaire)
-                if (_canScrollLeft)
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 40,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.white, Colors.white.withOpacity(0)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                      ),
-                      child: IconButton(
-                        onPressed: _scrollLeft,
-                        icon: Icon(Icons.chevron_left,
-                            color: bleuFoncer, size: 30),
-                      ),
-                    ),
-                  ),
-                // Bouton Scroll à droite (si nécessaire)
-                if (_canScrollRight)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 40,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.white.withOpacity(0), Colors.white],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                      ),
-                      child: IconButton(
-                        onPressed: _scrollRight,
-                        icon: Icon(Icons.chevron_right,
-                            color: bleuFoncer, size: 30),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    final top = MediaQuery.of(context).padding.top;
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2967FF), Color(0xFF1A56DB)],
         ),
       ),
-      body: SingleChildScrollView(
-        // Ajout du SingleChildScrollView
-        child: Column(
-          children: [
-            // Page correspondante
-            SizedBox(
-              height: MediaQuery.of(context).size.height -
-                  kToolbarHeight -
-                  80, // Ajustez la hauteur de la page
-              child: _pages[_selectedIndex]['page'],
+      padding: EdgeInsets.fromLTRB(20, top + 14, 20, 20),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Get.back(),
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white, size: 18),
             ),
-          ],
+          ),
+          const SizedBox(width: 14),
+          const Text(
+            'Voyage',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: List.generate(_pages.length, (index) {
+            final selected = _selectedIndex == index;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedIndex = index),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.only(right: 10),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 9),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? const Color(0xFF2967FF)
+                      : const Color(0xFFF5F7FA),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: selected
+                        ? const Color(0xFF2967FF)
+                        : const Color(0xFFE5E7EB),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _pages[index]['icon'],
+                      color: selected
+                          ? Colors.white
+                          : const Color(0xFF6B7280),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _pages[index]['title'],
+                      style: TextStyle(
+                        color: selected
+                            ? Colors.white
+                            : const Color(0xFF6B7280),
+                        fontSize: 13,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
         ),
       ),
     );

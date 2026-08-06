@@ -18,5 +18,8 @@ const Color grayColor = Color(0xFF8D8D8E);
 const double defaultPadding = 16.0;
 
 //  const apiUrl = "http://api.yadebus.com";
-// const apiUrl = "http://10.0.2.2/yade_bus_api";
-const apiUrl = "http://localhost/yade_bus_api";
+const apiUrl = "http://10.0.2.2/yade_bus_api";
+// const apiUrl = "http://localhost/yade_bus_api";
+
+
+// on arrive pas a voir vraiment le certificat puis donne un exemple de code de certifcat dans cet ui et fait un similation de denregistrement voal et de select de fichier reel lors de lenvoi des alertes et que le back office sois aussi vraiment une reel similation ya des bouton qui naffiche rien

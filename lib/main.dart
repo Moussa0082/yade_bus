@@ -10,7 +10,7 @@ import 'package:provider/provider.dart';
 // import 'package:uni_links3/uni_links.dart';
 import 'package:yade_bus/controller/deeplink_controller.dart';
 import 'package:yade_bus/provider/AuthProvider.dart';
-import 'package:yade_bus/screens/accueil.dart';
+import 'package:yade_bus/screens/main_screen.dart';
 import 'package:yade_bus/screens/splash.dart';
 import 'package:yade_bus/services/events_service.dart';
 import 'package:yade_bus/services/logement_service.dart';
@@ -20,10 +20,12 @@ import 'package:yade_bus/services/orange_money_service.dart';
 import 'package:yade_bus/services/paiement_service.dart';
 import 'package:yade_bus/services/reservation_service.dart';
 // import 'package:yade_bus/widgets/nav_bar.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+    await initializeDateFormatting('fr');
   // Initialize Firebase               
   await Firebase.initializeApp();                             
   await FirebaseMessaging.instance.getInitialMessage();             
@@ -105,8 +107,7 @@ class _MyAppState extends State<MyApp> {
               // Définissez les routes
               GetPage(
                   name: '/',
-                  page: () => Accueil(
-                      )),
+                  page: () => const MainScreen()),
               GetPage(name: '/cancel', page: () => CancelConfirmationScreen()),
             ],
             debugShowCheckedModeBanner: false,

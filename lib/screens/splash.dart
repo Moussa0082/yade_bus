@@ -6,10 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yade_bus/constant/constantes.dart';
 import 'package:yade_bus/provider/AuthProvider.dart';
-import 'package:yade_bus/screens/accueil.dart';
-import 'package:yade_bus/screens/home.dart';
-import 'package:yade_bus/screens/new_accueil.dart';
-import 'package:yade_bus/widgets/nav_bar.dart';
+import 'package:yade_bus/screens/main_screen.dart';
 
 import 'agent/agent_home.dart';
 
@@ -65,9 +62,7 @@ class _SplashScreenState extends State<SplashScreen>
       });
     } else {
       Timer(const Duration(seconds: 2), () {
-        Get.off(const BookingScreen(), transition: Transition.leftToRight);
-        // Get.off(const NewAccueil(), transition: Transition.leftToRight);
-        // Get.off(const Accueil(), transition: Transition.leftToRight);
+        Get.off(const MainScreen(), transition: Transition.leftToRight);
       });
     }
   }

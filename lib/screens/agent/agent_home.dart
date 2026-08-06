@@ -4,12 +4,10 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:yade_bus/constant/constantes.dart';
 import 'package:yade_bus/provider/AuthProvider.dart';
-import 'package:yade_bus/screens/agent/acheter_ticket.dart';
 import 'package:yade_bus/screens/agent/liste_voyageur.dart';
 import 'package:yade_bus/screens/agent/modifier_reservation.dart';
 import 'package:yade_bus/screens/agent/scanne_ticket.dart';
 
-import '../../widgets/custom_btn.dart';
 import 'new_voyage_form_agent.dart';
 
 // class AgentMainPage extends StatefulWidget {
@@ -107,163 +105,237 @@ class _AgentMainPageState extends State<AgentMainPage> {
     {
       "name": "Acheter ticket",
       "dest": const NewVoyageFormAgent(),
-      "icone": Icons
-          .shopping_cart, // Icône de panier d'achat pour l'achat de tickets
+      "icone": Icons.confirmation_number_rounded,
+      "color": const Color(0xFF2967FF),
     },
     {
       "name": "Scanner ticket",
       "dest": ScannerTicketPage(),
-      "icone": Icons
-          .qr_code_scanner, // Icône de scanner de code QR pour scanner les tickets
+      "icone": Icons.qr_code_scanner_rounded,
+      "color": const Color(0xFF2967FF),
     },
     {
-      "name": "Liste voyageur",
+      "name": "Liste voyageurs",
       "dest": ListeVoyageursPage(),
-      "icone": Icons.people, // Icône de personnes pour la liste des voyageurs
+      "icone": Icons.people_rounded,
+      "color": const Color(0xFF2967FF),
     },
     {
-      "name": "Modifier/Annuler réservation",
+      "name": "Modifier réservation",
       "dest": ModifierReservationPage(),
-      "icone": Icons
-          .edit_calendar, // Icône de calendrier d'édition pour modifier/annuler les réservations
-    }
+      "icone": Icons.edit_calendar_rounded,
+      "color": const Color(0xFF2967FF),
+    },
   ];
 
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    return Container(
-      decoration: BoxDecoration(
-        color: bleu,
-        image: DecorationImage(
-          image: const AssetImage("assets/images/gr-p.png"),
-          fit: BoxFit.cover,
-          colorFilter:
-              ColorFilter.mode(bleu.withOpacity(0.2), BlendMode.dstATop),
-        ),
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          backgroundColor: bleuFoncer,
-          // leading: IconButton(
-          //     onPressed: () {
-          //       Get.back();
-          //     },
-          //     icon: const Icon(
-          //       Icons.arrow_back_ios,
-          //       color: blanc,
-          //     )),
-          title: Text(
-            "Bienvenue ${auth.user!.prenom} ${auth.user!.nom}",
-            style: const TextStyle(color: blanc),
-          ),
-          centerTitle: true,
-        ),
-        body: Stack(
-          children: [
-            Image.asset(
-                height: 200,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                "assets/images/logo.png"),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.60,
-                decoration: const BoxDecoration(
-                  color: blanc,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(40.0),
-                    topRight: Radius.circular(40.0),
-                    // 16.0
-                  ),
-                ),
-                padding: const EdgeInsets.all(
-                    16.0), // Ajouter un padding pour l'espacement global
-
-                child: Center(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment
-                        .center, // Permet d'occuper toute la largeur
-                    children: [
-                      Expanded(
-                        child: GridView.builder(
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount:
-                                2, // Deux colonnes pour une apparence plus large
-                            crossAxisSpacing:
-                                16.0, // Espacement entre les colonnes
-                            mainAxisSpacing:
-                                16.0, // Espacement entre les lignes
-                            childAspectRatio:
-                                1, // Ratio pour rendre les cartes carrées
-                          ),
-                          itemCount: servicesCategories.length,
-                          itemBuilder: (context, index) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: background,
-                                borderRadius: BorderRadius.circular(
-                                    16.0), // Bords arrondis
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    spreadRadius: 1,
-                                    blurRadius: 6,
-                                    offset:
-                                        Offset(0, 3), // Crée une ombre légère
-                                  ),
-                                ],
-                                border: Border.all(
-                                  color: bleuFoncer, // Bordure avec couleur
-                                  width: 1.5, // Épaisseur de la bordure
-                                ),
-                              ),
-                              child: InkWell(
-                                onTap: () {
-                                  Get.to(servicesCategories[index]['dest']);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        servicesCategories[index]['icone'] ??
-                                            Icons.help_outline,
-                                        size: 48,
-                                        color: bleuFoncer, // Couleur de l'icône
-                                      ),
-                                      const SizedBox(height: 16.0),
-                                      Text(
-                                        servicesCategories[index]['name'],
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: bleuFoncer, // Couleur du texte
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+    final top = MediaQuery.of(context).padding.top;
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF2967FF), Color(0xFF1A56DB)],
               ),
             ),
-          ],
-        ),
+            padding: EdgeInsets.fromLTRB(20, top + 14, 20, 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.person_rounded,
+                          color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Tableau de bord',
+                          style: TextStyle(
+                              color: Colors.white70, fontSize: 13),
+                        ),
+                        Text(
+                          '${auth.user!.prenom} ${auth.user!.nom}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                            title: const Text('Déconnexion',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16)),
+                            content: const Text(
+                                'Voulez-vous vraiment vous déconnecter ?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(ctx, false),
+                                child: const Text('Annuler',
+                                    style: TextStyle(
+                                        color: Color(0xFF6B7280))),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(ctx, true),
+                                child: const Text('Déconnecter',
+                                    style: TextStyle(
+                                        color: Color(0xFFEF4444),
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          auth.logout();
+                          Get.offAllNamed('/');
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.logout_rounded,
+                                color: Colors.white, size: 16),
+                            SizedBox(width: 6),
+                            Text(
+                              'Déconnexion',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Actions rapides',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A2E),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: GridView.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: 1.1,
+                      ),
+                      itemCount: servicesCategories.length,
+                      itemBuilder: (context, index) {
+                        final item = servicesCategories[index];
+                        final color = item['color'] as Color;
+                        return GestureDetector(
+                          onTap: () =>
+                              Get.to(item['dest'] as Widget),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.all(18),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 52,
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    color:
+                                        color.withValues(alpha: 0.12),
+                                    borderRadius:
+                                        BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(
+                                    item['icone'] as IconData,
+                                    color: color,
+                                    size: 26,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  item['name'] as String,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1A1A2E),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

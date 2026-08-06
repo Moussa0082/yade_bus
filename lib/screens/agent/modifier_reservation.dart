@@ -1,250 +1,294 @@
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-
-// import '../../constant/constantes.dart';
-
-// class ModifierReservationPage extends StatefulWidget {
-//   @override
-//   _ModifierReservationPageState createState() =>
-//       _ModifierReservationPageState();
-// }
-
-// class _ModifierReservationPageState extends State<ModifierReservationPage> {
-//   String? selectedReservation;
-//   TextEditingController dateController = TextEditingController();
-
-//   Future<void> _selectDate(BuildContext context) async {
-//     DateTime currentDate = DateTime.now();
-//     DateTime? picked = await showDatePicker(
-//       context: context,
-//       initialDate: currentDate, // Date initiale
-//       firstDate: currentDate, // Date minimale (date du jour)
-//       lastDate: DateTime(2100), // Date maximale, vous pouvez la changer
-//       helpText: 'Sélectionner une date ', // Texte d'aide
-//       cancelText: 'Annuler',
-//       confirmText: 'OK',
-//       builder: (BuildContext context, Widget? child) {
-//         return Theme(
-//           data: ThemeData.light(), // Ajustez le thème si nécessaire
-//           child: child!,
-//         );
-//       },
-//     );
-
-//     if (picked != currentDate && picked != null) {
-//       // Si une date a été sélectionnée, formater le mois et le jour avec deux chiffres
-//       String formattedDate =
-//           "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-
-//       // Afficher la date formatée dans le TextFormField
-//       dateController.text = formattedDate;
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         backgroundColor: bleuFoncer,
-//         centerTitle: true,
-//         leading: IconButton(
-//             onPressed: () {
-//               Get.back();
-//             },
-//             icon: Icon(
-//               Icons.arrow_back_ios,
-//               color: blanc,
-//             )),
-//         title: Text(
-//           "Modifier/Annuler une réservation",
-//           style: TextStyle(color: blanc),
-//         ),
-//       ),
-//       body: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             DropdownButtonFormField<String>(
-//               value: selectedReservation,
-//               hint: Text("Sélectionner une réservation"),
-//               items: ['Réservation N1', 'Réservation N2', 'Réservation N3']
-//                   .map((String value) {
-//                 return DropdownMenuItem<String>(
-//                   value: value,
-//                   child: Text(value),
-//                 );
-//               }).toList(),
-//               onChanged: (newValue) =>
-//                   setState(() => selectedReservation = newValue),
-//             ),
-//             SizedBox(height: 20),
-//             Row(
-//               children: [
-//                 Expanded(
-//                     child: ElevatedButton(
-//                         onPressed: () {},
-//                         child: Text(
-//                           "Annuler",
-//                           style: TextStyle(color: blanc),
-//                         ),
-//                         style: ElevatedButton.styleFrom(
-//                             backgroundColor: Colors.red))),
-//                 SizedBox(width: 10),
-//                 Expanded(
-//                     child: ElevatedButton(
-//                         style: ElevatedButton.styleFrom(
-//                             backgroundColor: bleuFoncer),
-//                         onPressed: () {
-//                           _selectDate(context);
-//                         },
-//                         child: Text(
-//                           "Modifier",
-//                           style: TextStyle(color: blanc),
-//                         ))),
-//               ],
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../constant/constantes.dart';
-
 class ModifierReservationPage extends StatefulWidget {
+  const ModifierReservationPage({super.key});
+
   @override
-  _ModifierReservationPageState createState() =>
+  State<ModifierReservationPage> createState() =>
       _ModifierReservationPageState();
 }
 
 class _ModifierReservationPageState extends State<ModifierReservationPage> {
-  String? selectedReservation;
-  TextEditingController dateController = TextEditingController();
+  final TextEditingController _reservationController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
   bool isModif = false;
 
-  Future<void> _selectDate(BuildContext context) async {
-    DateTime currentDate = DateTime.now();
-    DateTime? picked = await showDatePicker(
+  static const Color _primaryBlue = Color(0xFF2967FF);
+  static const Color _background = Color(0xFFF5F7FA);
+  static const Color _textDark = Color(0xFF111827);
+  static const Color _textGray = Color(0xFF9CA3AF);
+  static const Color _errorRed = Color(0xFFEF4444);
+
+  Future<void> _selectDate() async {
+    final DateTime now = DateTime.now();
+    final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: currentDate,
-      firstDate: currentDate,
+      initialDate: now,
+      firstDate: now,
       lastDate: DateTime(2100),
-      helpText: 'Sélectionner une date ',
+      helpText: 'Sélectionner une date',
       cancelText: 'Annuler',
       confirmText: 'OK',
       builder: (BuildContext context, Widget? child) {
         return Theme(
-          data: ThemeData.light(),
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(primary: _primaryBlue),
+          ),
           child: child!,
         );
       },
     );
 
-    if (picked != currentDate && picked != null) {
-      String formattedDate =
-          "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-      dateController.text = formattedDate;
+    if (picked != null) {
+      setState(() {
+        _dateController.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
     }
+  }
+
+  InputDecoration _fieldDecoration({
+    required String hint,
+    required IconData prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: _textGray, fontSize: 14),
+      filled: true,
+      fillColor: _background,
+      prefixIcon: Icon(prefixIcon, color: _textGray, size: 20),
+      suffixIcon: suffixIcon,
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: _textGray.withValues(alpha: 0.3)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: _textGray.withValues(alpha: 0.3)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _primaryBlue, width: 1.8),
+      ),
+    );
+  }
+
+  Widget _sectionLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: _textGray,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.4,
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _reservationController.dispose();
+    _dateController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: bleuFoncer,
-        centerTitle: true,
-        leading: IconButton(
-          onPressed: () {
-            Get.back();
-          },
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: blanc,
-          ),
-        ),
-        title: Text(
-          "Modifier/Annuler une réservation",
-          style: TextStyle(color: blanc),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DropdownButtonFormField<String>(
-              value: selectedReservation,
-              hint: Text("Sélectionner une réservation"),
-              items: ['Réservation N1', 'Réservation N2', 'Réservation N3']
-                  .map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (newValue) =>
-                  setState(() => selectedReservation = newValue),
+      backgroundColor: _background,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Custom top bar ──────────────────────────────────────────────
+          Container(
+            color: Colors.white,
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 8,
+              bottom: 12,
+              left: 8,
+              right: 16,
             ),
-            SizedBox(height: 20),
-            isModif
-                ? InkWell(
-                    onTap: () {
-                      _selectDate(context);
-                    },
-                    child: IgnorePointer(
-                      child: TextFormField(
-                        controller: dateController,
-                        decoration: InputDecoration(
-                          labelText: 'Date de modification',
-                          // border: OutlineInputBorder(),
-                          suffixIcon: Icon(Icons.calendar_today),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () => Get.back(),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                      color: _textDark, size: 20),
+                ),
+                const Expanded(
+                  child: Text(
+                    'Modifier / Annuler',
+                    style: TextStyle(
+                      color: _textDark,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                // Placeholder to center the title
+                const SizedBox(width: 44),
+              ],
+            ),
+          ),
+
+          // ── Blue subtitle banner ────────────────────────────────────────
+          Container(
+            color: _primaryBlue,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Text(
+              'Gérez la réservation d\'un client',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.85),
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+
+          // ── Form body ───────────────────────────────────────────────────
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Reservation number field
+                  _sectionLabel('NUMÉRO DE RÉSERVATION'),
+                  TextFormField(
+                    controller: _reservationController,
+                    keyboardType: TextInputType.text,
+                    style: const TextStyle(
+                      color: _textDark,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: _fieldDecoration(
+                      hint: 'Ex. RES-2025-00123',
+                      prefixIcon: Icons.confirmation_number_outlined,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Date field — shown only when isModif is true
+                  if (isModif) ...[
+                    _sectionLabel('NOUVELLE DATE'),
+                    GestureDetector(
+                      onTap: _selectDate,
+                      child: AbsorbPointer(
+                        child: TextFormField(
+                          controller: _dateController,
+                          style: const TextStyle(
+                            color: _textDark,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          decoration: _fieldDecoration(
+                            hint: 'Sélectionner une date',
+                            prefixIcon: Icons.calendar_today_outlined,
+                            suffixIcon: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: _textGray,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  )
-                : Container(),
-            SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    child: Text(
-                      "Annuler",
-                      style: TextStyle(color: blanc),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
+                    const SizedBox(height: 24),
+                  ] else
+                    const SizedBox(height: 24),
+
+                  // ── Action buttons ──────────────────────────────────────
+                  Row(
+                    children: [
+                      // Annuler button
+                      Expanded(
+                        child: SizedBox(
+                          height: 52,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('Réservation annulée'),
+                                  backgroundColor: _errorRed,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.cancel_outlined,
+                                color: _errorRed, size: 18),
+                            label: const Text(
+                              'Annuler la réservation',
+                              style: TextStyle(
+                                color: _errorRed,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFFF1F2),
+                              side: const BorderSide(
+                                  color: _errorRed, width: 1.4),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      // Modifier button
+                      Expanded(
+                        child: SizedBox(
+                          height: 52,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                isModif = true;
+                              });
+                            },
+                            icon: const Icon(Icons.edit_outlined,
+                                color: Colors.white, size: 18),
+                            label: const Text(
+                              'Modifier',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _primaryBlue,
+                              elevation: 0,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: bleuFoncer,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        isModif = true;
-                      });
-                      // Vous pouvez ajouter ici la logique de modification
-                    },
-                    child: Text(
-                      "Modifier",
-                      style: TextStyle(color: blanc),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

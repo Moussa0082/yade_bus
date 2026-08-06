@@ -1,654 +1,469 @@
-import 'dart:async';
-import 'dart:convert';
+// import 'dart:convert'; // TODO: restore when API is ready
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shimmer/shimmer.dart';
-import 'package:http/http.dart' as http;
+// import 'package:http/http.dart' as http; // TODO: restore when API is ready
 
-import 'package:yade_bus/constant/constantes.dart';
-import 'package:yade_bus/models/categorie.dart';
-import 'package:yade_bus/models/events.dart';
-import 'package:yade_bus/models/events_city.dart';
+// import 'package:yade_bus/constant/constantes.dart'; // TODO: restore when API is ready
 import 'package:yade_bus/screens/detail_divertissement.dart';
-import 'package:yade_bus/services/categorie_service.dart';
-import 'package:yade_bus/services/events_service.dart';
-import 'package:yade_bus/widgets/shimmer_effect.dart';
+// import 'package:yade_bus/services/categorie_service.dart'; // TODO: restore when API is ready
 
-class DivertissementScreen extends StatefulWidget {
-  const DivertissementScreen({super.key});
+// ─── Events Tab ──────────────────────────────────────────────────────────────
+
+class EventsTab extends StatefulWidget {
+  const EventsTab({super.key});
 
   @override
-  State<DivertissementScreen> createState() => _DivertissementScreenState();
+  State<EventsTab> createState() => _EventsTabState();
 }
 
-class _DivertissementScreenState extends State<DivertissementScreen>
-    with SingleTickerProviderStateMixin {
-  List<dynamic> eventsList = [];
-  List<dynamic> eventsCityList = [];
+class _EventsTabState extends State<EventsTab> {
+  static const _primary = Color(0xFF2967FF);
 
-  bool isCatLoading = true;
-  bool isEventLoading = true;
-  String? selectedCategory; // Catégorie sélectionnée
-  String? selectedCity; // Ville sélectionnée
-  List<dynamic> cities = []; // Liste des villes disponibles pour l'événement
-
-  final EventsService eventsService = EventsService();
-
-  TabController? _tabController;
-  List<Map<String, dynamic>> categorieList = [];
-
-  // Méthode pour récupérer toutes les catégories
-  Future<void> getAllCategorie() async {
-    // Récupérez la liste des catégories de manière asynchrone
-    List<dynamic> categories = await CategorieProduitService().fetchCategorie();
-
-    // Ajouter un onglet "Tout"
-    categorieList = [
-      {'idCategory': 'all', 'nom': 'Tout'},
-      ...categories
-          .map((category) => {
-                'idCategory': category.idCategory,
-                'nom': category.nom,
-              })
-          .toList()
-    ];
-    setState(() {
-      selectedCategory = 'all'; // Tout est sélectionné par défaut
-      // Mettre à jour categorieList avec les catégories récupérées
-      // categorieList = categories
-      //     .map((category) =>
-      //         {'idCategory': category.idCategory, 'nom': category.nom})
-      //     .toList();
-      // Initialiser le TabController après avoir récupéré les catégories
-      _tabController = TabController(length: categorieList.length, vsync: this);
-    });
-  }
-
-  // Méthode pour récupérer les événements en fonction de la catégorie
-  Future<void> fetchEventsByCategory(String categoryId) async {
-    // Vous pouvez remplacer cette ligne par un appel à votre service pour récupérer les événements de la catégorie
-
-    // Logique pour récupérer tous les événements ou par catégorie
-    final url = categoryId == 'all'
-        ? "$apiUrl/events.php" // Remplacez cette URL par celle qui récupère tous les événements
-        : "$apiUrl/events_by_categorie.php?idCategory=$categoryId"; // URL spécifique à la catégorie
-
-    final response = await http.get(Uri.parse(url));
-
-    if (response.statusCode == 200) {
-      final String jsonString = utf8.decode(response.bodyBytes);
-      List<dynamic> body = json.decode(jsonString);
-      setState(() {
-        eventsList = body;
-        isEventLoading = false;
-      });
-    } else {
-      setState(() {
-        isEventLoading = false;
-      });
-      print(
-          'Échec de la requête pour les événements par catégorie avec le code d\'état: ${response.statusCode}');
-    }
-  }
-
-  // Méthode pour récupérer les événements
-  Future<void> fetchEvents() async {
-    // Vous pouvez remplacer cette ligne par un appel à votre service pour récupérer les événements
-    final response = await http.get(Uri.parse("$apiUrl/events.php"));
-
-    if (response.statusCode == 200) {
-      final String jsonString = utf8.decode(response.bodyBytes);
-      List<dynamic> body = json.decode(jsonString);
-      setState(() {
-        eventsList = body;
-        isEventLoading = false;
-      });
-    } else {
-      setState(() {
-        isEventLoading = false;
-      });
-      print(
-          'Échec de la requête pour les événements par catégorie avec le code d\'état: ${response.statusCode}');
-    }
-  }
-
-  // Future<void> fetchCitiesByCategorie(int idCategory) async {
-  //   final response = await http
-  //       .get(Uri.parse("$apiUrl/events_ville_by_categorie.php?$idCategory"));
-
-  //   if (response.statusCode == 200) {
-  //     final String jsonString = utf8.decode(response.bodyBytes);
-  //     print(jsonString); // Print the JSON for debugging
-
-  //     final dynamic jsonResponse = json.decode(jsonString); // Use dynamic
-
-  //     if (jsonResponse is List<dynamic>) {
-  //       // Check if it's a list (cities found)
-  //       setState(() {
-  //         cities = jsonResponse
-  //             .where((city) =>
-  //                 city is Map<String, dynamic> && city['lieu'] != null)
-  //             .map((city) => city['lieu'] as String)
-  //             .toList();
-  //       });
-  //     } else if (jsonResponse is Map<String, dynamic> &&
-  //         jsonResponse.containsKey('message')) {
-  //       // Handle the "no cities found" message
-  //       final String message = jsonResponse['message'] as String;
-  //       print("API Message: $message"); // Log the message
-  //       // You might want to display this message to the user or handle it differently
-  //     } else {
-  //       // Handle unexpected JSON structure
-  //       print("Unexpected JSON structure: $jsonResponse");
-  //       // Optionally throw an exception or display an error message
-  //       throw FormatException(
-  //           'Unexpected JSON structure'); // Throwing is a good practice
-  //     }
-  //   } else {
-  //     print(
-  //         'Failed to fetch cities for category with status code: ${response.statusCode}');
-  //     // Handle the error, e.g., show a message to the user
-  //   }
-  // }
-
-  // // Méthode pour récupérer les villes en fonction de la categorie sélectionné
-  Future<void> fetchCitiesForEvent(int eventId) async {
-    final response = await http.get(
-        Uri.parse("$apiUrl/events_ville_by_categorie.php?idCategory=$eventId"));
-
-    if (response.statusCode == 200 || response.statusCode == 200) {
-      final String jsonString = utf8.decode(response.bodyBytes);
-      List<Map<String, dynamic>> body = json.decode(jsonString);
-      setState(() {
-        cities = body;
-      });
-    } else {
-      print(
-          'Échec de la requête pour les villes par catégorie avec le code d\'état: ${response.statusCode}');
-    }
-  }
-
-  Future<void> fetchEventByCities(String lieu) async {
-    final response =
-        await http.get(Uri.parse("$apiUrl/events_by_ville.php?lieu=$lieu"));
-
-    if (response.statusCode == 200 || response.statusCode == 200) {
-      final String jsonString = utf8.decode(response.bodyBytes);
-      List<dynamic> body = json.decode(jsonString);
-      setState(() {
-        eventsList = body;
-      });
-    } else {
-      print(
-          'Échec de la requête pour les evenement par lieu avec le code d\'état: ${response.statusCode}');
-    }
-  }
+  List<dynamic> _events = [];
+  List<Map<String, dynamic>> _categories = [];
+  String _selectedCategory = 'all';
+  bool _isLoading = true;
+  bool _isCatLoading = true;
 
   @override
   void initState() {
     super.initState();
-    getAllCategorie();
-    fetchEvents();
+    // _loadCategories(); // TODO: restore when API is ready
+    // _loadEvents();     // TODO: restore when API is ready
+    _loadStaticData();
   }
 
-  Map<String, IconData> categoryIcons = {
-    'Reel': Icons.video_call,
-    'Publication': Icons.grid_on,
-    'Story': Icons.add_circle_outline,
-    'Story à la une': Icons.favorite_border,
-    'En direct': Icons.wifi_tethering,
-    'Créé pour vous': Icons.auto_awesome,
-    // Ajoutez d'autres catégories et icônes ici
-  };
-
-  @override
-  void dispose() {
-    _tabController
-        ?.dispose(); // Libérer le contrôleur lorsqu'il n'est plus nécessaire
-    super.dispose();
+  /* TODO: restore when API is ready
+  Future<void> _loadCategories() async {
+    try {
+      final cats = await CategorieProduitService().fetchCategorie();
+      if (mounted) {
+        setState(() {
+          _categories = [
+            {'idCategory': 'all', 'nom': 'Tous'},
+            ...cats.map((c) => {'idCategory': c.idCategory, 'nom': c.nom}),
+          ];
+          _isCatLoading = false;
+        });
+      }
+    } catch (_) { if (mounted) setState(() => _isCatLoading = false); }
   }
 
-  // Liste des catégories avec les villes disponibles
+  Future<void> _loadEvents({String categoryId = 'all'}) async {
+    setState(() => _isLoading = true);
+    try {
+      final url = categoryId == 'all'
+          ? '$apiUrl/events.php'
+          : '$apiUrl/events_by_categorie.php?idCategory=$categoryId';
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final body = json.decode(utf8.decode(response.bodyBytes)) as List;
+        if (mounted) setState(() { _events = body; _isLoading = false; });
+      } else { if (mounted) setState(() => _isLoading = false); }
+    } catch (_) { if (mounted) setState(() => _isLoading = false); }
+  }
+  */
+
+  static const List<Map<String, dynamic>> _allStaticEvents = [
+    {
+      'id': 1, 'nom': 'Concert Salif Keïta – Hommage au Malien',
+      'categorie': 'Concert', 'date': '15 Août 2026', 'heure': '20h00',
+      'localisation': 'Palais de la Culture, Bamako', 'tarif': '10 000',
+      'capacite': 2000,
+      'img': 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80',
+      'description': 'Une soirée inoubliable avec la voix d\'or du Mali.',
+    },
+    {
+      'id': 2, 'nom': 'Festival Kayes en Fête',
+      'categorie': 'Festival', 'date': '20 Juil 2026', 'heure': '18h00',
+      'localisation': 'Place du gouvernorat, Kayes', 'tarif': '0',
+      'capacite': 5000,
+      'img': 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80',
+      'description': 'Célébration culturelle avec musique, danse et artisanat local.',
+    },
+    {
+      'id': 3, 'nom': 'Foire Internationale de Bamako 2026',
+      'categorie': 'Foire', 'date': '01 Sep 2026', 'heure': '09h00',
+      'localisation': 'Parc des Expositions, Bamako', 'tarif': '5 000',
+      'capacite': 10000,
+      'img': 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80',
+      'description': 'La plus grande foire commerciale d\'Afrique de l\'Ouest.',
+    },
+    {
+      'id': 4, 'nom': 'Nuit Hip-Hop Bamako',
+      'categorie': 'Concert', 'date': '01 Août 2026', 'heure': '21h00',
+      'localisation': 'Stade Modibo Keïta, Bamako', 'tarif': '7 500',
+      'capacite': 8000,
+      'img': 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80',
+      'description': 'Les meilleurs artistes hip-hop maliens et invités spéciaux.',
+    },
+    {
+      'id': 5, 'nom': 'Exposition Artisanat & Textile',
+      'categorie': 'Exposition', 'date': '25 Juil 2026', 'heure': '10h00',
+      'localisation': 'Maison des Artisans, Bamako', 'tarif': '2 000',
+      'capacite': 500,
+      'img': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
+      'description': 'Bogolan, bijoux, sculptures et vêtements made in Mali.',
+    },
+    {
+      'id': 6, 'nom': 'Match de Gala – Étoiles du Mali',
+      'categorie': 'Sport', 'date': '10 Août 2026', 'heure': '16h00',
+      'localisation': 'Stade du 26 Mars, Bamako', 'tarif': '3 000',
+      'capacite': 50000,
+      'img': 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
+      'description': 'Match amical entre les légendes du football malien.',
+    },
+  ];
+
+  void _loadStaticData() {
+    _categories = [
+      {'idCategory': 'all', 'nom': 'Tous'},
+      {'idCategory': '1', 'nom': 'Concert'},
+      {'idCategory': '2', 'nom': 'Festival'},
+      {'idCategory': '3', 'nom': 'Foire'},
+      {'idCategory': '4', 'nom': 'Exposition'},
+      {'idCategory': '5', 'nom': 'Sport'},
+    ];
+    _events = List.from(_allStaticEvents);
+    if (mounted) {
+      setState(() { _isLoading = false; _isCatLoading = false; });
+    }
+  }
+
+  void _filterStaticEvents(String categoryId) {
+    setState(() {
+      _selectedCategory = categoryId;
+      _events = categoryId == 'all'
+          ? List.from(_allStaticEvents)
+          : _allStaticEvents.where((e) {
+              final cat = _categories.firstWhere(
+                (c) => c['idCategory'] == categoryId,
+                orElse: () => <String, dynamic>{},
+              );
+              return cat.isNotEmpty && e['categorie'] == cat['nom'];
+            }).toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Divertissement",
-          style: TextStyle(color: blanc),
-        ),
-        centerTitle: true,
-        backgroundColor: bleuFoncer,
-        leading: IconButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            icon: const Icon(Icons.arrow_back_ios, color: blanc)),
-        bottom: categorieList.isEmpty
-            ? null
-            :
-//             PreferredSize(
-//   preferredSize: const Size.fromHeight(40),
-//   child: ClipRRect(
-//     child: Container(
-//       height: 40,
-//       margin: const EdgeInsets.symmetric(horizontal: 20),
-//       decoration: BoxDecoration(
-//         borderRadius: BorderRadius.all(Radius.circular(10)),
-//         border: Border.all(color: Colors.grey.shade300), // Bordure grise claire
-//       ),
-//       child: TabBar(
-//         controller: _tabController,
-//         labelColor: Colors.black, // Texte noir
-//         unselectedLabelColor: Colors.grey, // Texte gris pour les onglets non sélectionnés
-//         indicatorSize: TabBarIndicatorSize.tab,
-//         dividerColor: Colors.transparent,
-//         indicator: BoxDecoration(
-//           color: Colors.grey.shade200, // Fond gris clair pour l'onglet sélectionné
-//           borderRadius: BorderRadius.all(Radius.circular(10)),
-//         ),
-//         onTap: (index) {
-//           // Met à jour la catégorie sélectionnée et récupère les événements
-//           setState(() {
-//             selectedCategory = categorieList[index]['idCategory'].toString();
-//           });
-//           categorieList[index]['idCategory'] != 'all'
-//               ? fetchCitiesForEvent(categorieList[index]['idCategory'])
-//               : fetchEventsByCategory(categorieList[index]['idCategory'].toString());
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHeader(),
+        _buildFilterChips(),
+        Expanded(child: _buildList()),
+      ],
+    );
+  }
 
-//           fetchEventsByCategory(categorieList[index]['idCategory'].toString());
-//         },
-//         tabs: categorieList.map((tab) {
-//           String tabName = tab['nom'];
-//           IconData icon = categoryIcons[tabName] ?? Icons.category; // Icône par défaut si non trouvée
-//           return Tab(
-//             child: Row(
-//               mainAxisAlignment: MainAxisAlignment.center,
-//               children: [
-//                 Icon(icon, size: 20),
-//                 SizedBox(width: 8),
-//                 Text(tabName),
-//               ],
-//             ),
-//           );
-//         }).toList(),
-//       ),
-//     ),
-//   ),
-// ),
-            PreferredSize(
-                preferredSize: const Size.fromHeight(40),
-                child: TabBar(
-                  controller: _tabController,
-                  labelColor: blanc, // Texte noir
-                  unselectedLabelColor:
-                      blanc, // Texte gris pour les onglets non sélectionnés
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  dividerColor: blanc,
-                  indicatorColor: blanc, // Supprime l'indicateur de couleur
-                  indicator: UnderlineTabIndicator(
-                    // Indicateur de soulignement simple
-                    borderSide:
-                        BorderSide(color: Colors.grey.shade400, width: 2.0),
-                  ),
-                  onTap: (index) {
-                    // Met à jour la catégorie sélectionnée et récupère les événements
-                    setState(() {
-                      selectedCategory =
-                          categorieList[index]['idCategory'].toString();
-                    });
-                    categorieList[index]['idCategory'] != 'all'
-                        ? fetchCitiesForEvent(
-                            categorieList[index]['idCategory'])
-                        : fetchEventsByCategory(
-                            categorieList[index]['idCategory'].toString());
-
-                    fetchEventsByCategory(
-                        categorieList[index]['idCategory'].toString());
-                  },
-                  tabs: categorieList.map((tab) {
-                    String tabName = tab['nom'];
-                    IconData icon = categoryIcons[tabName] ??
-                        Icons.category; // Icône par défaut si non trouvée
-                    return Tab(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(icon, size: 20),
-                          SizedBox(width: 8),
-                          Text(tabName),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(
-              height: 10,
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text(
+            'Événements',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF111827),
             ),
-            // Onglets pour afficher les catégories d'événements
-
-            // SizedBox(
-            //   height: 100,
-            //   child: ListView.builder(
-            //     itemCount: eventsList.length,
-            //     scrollDirection: Axis.horizontal,
-            //     itemBuilder: (context, index) {
-            //     final events = eventsList[index];
-
-            //          return GestureDetector(
-            //               onTap: () {
-            //                 // Quand une catégorie est sélectionnée, on met à jour la sélection
-            //                 setState(() {
-            //                   selectedCategory = category.nom;
-            //                   selectedCity =
-            //                       null; // Réinitialise la ville sélectionnée
-            //                   // availableCities = category
-            //                   //     .availableCities; // Met à jour les villes disponibles
-            //                 });
-            //               },
-            //               child:Tab(
-
-            //               )
-            //               //  CategoryCard(category: category),
-
-            //             );
-            //                      },
-
-            //   ),
-            // ),
-
-            // Si une catégorie est sélectionnée, afficher les villes disponibles pour cette catégorie
-            // if (selectedCategory != null) ...[
-            //   SizedBox(height: 2),
-
-            //   // DropdownButton pour sélectionner une ville en fonction de la catégorie
-            //   Padding(
-            //     padding: const EdgeInsets.all(10.0),
-            //     child: Container(
-            //       width: double
-            //           .infinity, // Largeur maximale pour occuper tout l'espace disponible
-            //       padding: EdgeInsets.symmetric(
-            //           horizontal: 16.0), // Espacement interne
-            //       decoration: BoxDecoration(
-            //         borderRadius: BorderRadius.circular(12), // Coins arrondis
-            //         border: Border.all(
-            //             color: bleu, width: 2), // Bordure bleue stylisée
-            //       ),
-            //       child: DropdownButton<String>(
-            //         isExpanded:
-            //             true, // Pour que le bouton utilise toute la largeur du conteneur
-            //         hint: Text(
-            //           "Choisissez une ville",
-            //           style: TextStyle(
-            //               fontSize: 18,
-            //               fontWeight: FontWeight.bold,
-            //               color: Colors.grey), // Texte indicatif stylisé
-            //         ),
-            //         value: selectedCity,
-            //         icon: Icon(Icons.arrow_drop_down,
-            //             size: 30,
-            //             color: bleu), // Icône plus grande et colorée
-            //         underline:
-            //             SizedBox(),
-            //         onChanged: (String? newCity) {
-            //           setState(() {
-            //             selectedCity = newCity;
-            //           });
-            //         },
-            //         items: eventsCityList
-            //             .firstWhere(
-            //                 (event) => event.libelle == selectedCategory)
-            //             .eventsCityList
-            //             .map<DropdownMenuItem<String>>((String city) {
-            //           return DropdownMenuItem<String>(
-            //             value: city,
-            //             child: Text(
-            //               city,
-            //               style: TextStyle(
-            //                   fontSize: 18,
-            //                   fontWeight: FontWeight.bold,
-            //                   color:
-            //                       Colors.black), // Style du texte des options
-            //             ),
-            //           );
-            //         }
-            //         )
-            //         // .toList(),
-            //       ),
-            //     ),
-            //   )
-            // ],
-            if (selectedCategory != null && cities.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0), // Add const here
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue, width: 2),
-                  ),
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    hint: const Text(
-                      "Choisissez une ville",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    value: cities.any((city) => city['lieu'] == selectedCity)
-                        ? selectedCity
-                        : null, // Assurez-vous que selectedCity est présent dans cities
-                    icon: const Icon(Icons.arrow_drop_down,
-                        size: 30, color: Colors.blue),
-                    underline: const SizedBox(),
-                    onChanged: (String? newCity) {
-                      if (newCity != null) {
-                        setState(() {
-                          selectedCity = newCity;
-                        });
-                        fetchEventByCities(selectedCity!);
-                      }
-                    },
-                    items: cities.map<DropdownMenuItem<String>>((dynamic city) {
-                      return DropdownMenuItem<String>(
-                        value: city['lieu'],
-                        child: Text(
-                          city['lieu'] != null ? city['lieu'] : "Inconnu",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ],
-
-            // Affichage de la sélection finale
-
-            isEventLoading
-                ? buildShimmerDivertissementCard(context)
-                : buildEntertainmentGrid(),
-          ],
-        ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Découvrez les événements à venir',
+            style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+          ),
+        ],
       ),
     );
   }
 
-  Widget buildEntertainmentGrid() {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 840),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 250,
-            // crossAxisCount: MediaQuery.of(context).size.width ~/ 180,
-            // crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 0.70,
-          ),
-          itemCount: eventsList.length,
-          itemBuilder: (context, index) {
-            if (eventsList.isEmpty) {
-              return Center(
-                child: Text("Aucun evénement trouvé"),
-              );
-            }
-            final entertainment = eventsList[index];
-            return EntertainmentCard(events: entertainment);
+  Widget _buildFilterChips() {
+    final List<Map<String, dynamic>> filters = _isCatLoading
+        ? [{'idCategory': 'all', 'nom': 'Tous'}]
+        : _categories;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 0, 14),
+      child: SizedBox(
+        height: 36,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: filters.length,
+          itemBuilder: (_, i) {
+            final cat = filters[i];
+            final catId = cat['idCategory'].toString();
+            final selected = _selectedCategory == catId;
+            return GestureDetector(
+              onTap: () => _filterStaticEvents(catId),
+              // onTap: () { setState(() => _selectedCategory = catId); _loadEvents(categoryId: catId); }, // TODO: restore when API is ready
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.only(right: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                decoration: BoxDecoration(
+                  color: selected ? _primary : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                      color: selected ? _primary : const Color(0xFFE5E7EB)),
+                ),
+                child: Text(
+                  cat['nom'] as String,
+                  style: TextStyle(
+                    color: selected ? Colors.white : const Color(0xFF6B7280),
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ),
+            );
           },
         ),
       ),
     );
   }
+
+  Widget _buildList() {
+    if (_isLoading) {
+      return const Center(
+          child: CircularProgressIndicator(color: Color(0xFF2967FF)));
+    }
+    if (_events.isEmpty) {
+      return const Center(
+        child: Text('Aucun événement trouvé',
+            style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14)),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: _events.length,
+      itemBuilder: (_, i) => EventCard(event: _events[i]),
+    );
+  }
 }
 
-// class Category {
-//   final String label;
-//   final IconData icon;
-//   final List<String>
-//       availableCities; // Ajout des villes disponibles pour chaque catégorie
+// ─── Event Card ───────────────────────────────────────────────────────────────
 
-//   Category(
-//       {required this.label, required this.icon, required this.availableCities});
-// }
-
-// class CategoryCard extends StatelessWidget {
-//   final CategoriesEvent category;
-
-//   CategoryCard({required this.category});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(horizontal: 10),
-//       child: Column(
-//         children: [
-//           CircleAvatar(
-//             radius: 30,
-//             backgroundColor: bleu,
-//             child: Icon(category.icon, size: 30, color: Colors.white),
-//           ),
-//           SizedBox(height: 6),
-//           Text(category.label),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-class EntertainmentCard extends StatelessWidget {
-  final dynamic events;
-
-  EntertainmentCard({required this.events});
+class EventCard extends StatelessWidget {
+  final dynamic event;
+  const EventCard({required this.event, super.key});
 
   @override
   Widget build(BuildContext context) {
+    final category = event['categorie'] ?? event['category'] ?? '';
+
     return GestureDetector(
-      onTap: () {
-        Get.to(
-            transition: Transition.downToUp,
-            DetailDivertissement(
-              evenement: events,
-            ));
-      },
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        elevation: 5,
+      onTap: () => Get.to(
+        DetailDivertissement(evenement: event),
+        transition: Transition.downToUp,
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(15),
-                topRight: Radius.circular(15),
-              ),
-              child: Stack(
-                children: [
-                  // Image avec un indicateur de chargement
-
-                  Image.network(
-                    events['img'] != null
-                        ? events['img']!
-                        : "https://media.ouest-france.fr/v1/pictures/af0f64d99cd99e117d44088f38ec0f3c-concert-de-paris-2023-classique-programme-tv?width=1260&height=708&sign=c8bec0a8aea3914c14fe23795d9da42df8cdbe1847d68b2c859494a128bed7fa&client_id=bpservices",
-                    height: 120,
+            // Image with overlay
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: Image.network(
+                    event['img'] ?? '',
                     width: double.infinity,
+                    height: 180,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Image.asset("assets/images/div-default.jpg");
-                    },
-                    loadingBuilder: (BuildContext context, Widget child,
-                        ImageChunkEvent? loadingProgress) {
-                      if (loadingProgress == null) {
-                        return child;
-                      } else {
-                        return Container(
-                          height: 120,
-                          width: double.infinity,
-                          color: Colors.grey.withOpacity(0.3),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.blue),
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      (loadingProgress.expectedTotalBytes ?? 1)
-                                  : null,
-                            ),
-                          ),
-                        );
-                      }
+                    errorBuilder: (_, __, ___) => Container(
+                      width: double.infinity,
+                      height: 180,
+                      color: const Color(0xFF1A1A2E),
+                      child: const Icon(Icons.music_note_rounded,
+                          size: 48, color: Color(0xFF2967FF)),
+                    ),
+                    loadingBuilder: (_, child, progress) {
+                      if (progress == null) return child;
+                      return Container(
+                          height: 180, color: const Color(0xFFF5F7FA));
                     },
                   ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+                ),
+                // Dark overlay at bottom of image
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 80,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.6),
+                        ],
+                      ),
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(0)),
+                    ),
+                  ),
+                ),
+                // Category badge
+                if (category.isNotEmpty)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2967FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        category.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                // Title on image
+                Positioned(
+                  bottom: 12,
+                  left: 14,
+                  right: 14,
+                  child: Text(
+                    event['nom'] ?? '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    events['nom'] != null ? events['nom']! : "Inconnu",
-                    style: TextStyle(
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    "Lieu : ${events['localisation'] != null ? events['localisation']! : "Inconnu"}",
-                    style: TextStyle(color: bleuFoncer),
+                ),
+              ],
+            ),
+            // Details
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today_rounded,
+                          size: 14, color: Color(0xFF9CA3AF)),
+                      const SizedBox(width: 6),
+                      Text(
+                        event['date'] ?? '',
+                        style: const TextStyle(
+                            fontSize: 13, color: Color(0xFF6B7280)),
+                      ),
+                      const SizedBox(width: 16),
+                      const Icon(Icons.access_time_rounded,
+                          size: 14, color: Color(0xFF9CA3AF)),
+                      const SizedBox(width: 6),
+                      Text(
+                        event['heure'] ?? event['time'] ?? '',
+                        style: const TextStyle(
+                            fontSize: 13, color: Color(0xFF6B7280)),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 5),
-                  Text(
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    'Prix : ${events['tarif']}',
-                    style: TextStyle(color: bleuFoncer),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined,
+                          size: 14, color: Color(0xFF9CA3AF)),
+                      const SizedBox(width: 6),
+                      Text(
+                        event['localisation'] ?? event['lieu'] ?? '',
+                        style: const TextStyle(
+                            fontSize: 13, color: Color(0xFF6B7280)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          RichText(
+                            text: TextSpan(children: [
+                              TextSpan(
+                                text: '${event['tarif'] ?? '---'} ',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2967FF),
+                                ),
+                              ),
+                              const TextSpan(
+                                text: 'Fcfa',
+                                style: TextStyle(
+                                    fontSize: 12, color: Color(0xFF9CA3AF)),
+                              ),
+                            ]),
+                          ),
+                          if (event['capacite'] != null) ...[
+                            const SizedBox(width: 10),
+                            const Icon(Icons.people_outline,
+                                size: 14, color: Color(0xFF9CA3AF)),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${event['capacite']}',
+                              style: const TextStyle(
+                                  fontSize: 13, color: Color(0xFF6B7280)),
+                            ),
+                          ],
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2967FF),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.confirmation_number_outlined,
+                                color: Colors.white, size: 14),
+                            SizedBox(width: 6),
+                            Text(
+                              'Acheter',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -658,4 +473,13 @@ class EntertainmentCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── Legacy wrapper (kept for backward compatibility) ─────────────────────────
+
+class DivertissementScreen extends StatelessWidget {
+  const DivertissementScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => const EventsTab();
 }

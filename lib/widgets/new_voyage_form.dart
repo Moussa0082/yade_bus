@@ -1,13 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
 import '../constant/constantes.dart';
-import '../controller/deeplink_controller.dart';
 import '../screens/voyage.dart';
 
 class NewVoyageForm extends StatefulWidget {
@@ -18,652 +15,494 @@ class NewVoyageForm extends StatefulWidget {
 }
 
 class _NewVoyageFormState extends State<NewVoyageForm> {
-  TextEditingController dateAllerController = TextEditingController();
-  TextEditingController dateRetourController = TextEditingController();
+  static const _primary = Color(0xFF2967FF);
+  static const _orange = Color(0xFFF59E0B);
+
+  final TextEditingController dateAllerController = TextEditingController();
+  final TextEditingController dateRetourController = TextEditingController();
   final GlobalKey<FormState> formkey = GlobalKey<FormState>();
 
   String? idDepart;
   String? nomDepart;
   String? nomDest;
   String? idDest;
-  bool isLoading = true;
   int? id;
   int? idD;
-  Position? _currentPosition;
-
-  Future<bool> _handleLocationPermission() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Location services are disabled. Please enable the services')));
-      return false;
-    }
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permissions are denied')));
-        return false;
-      }
-    }
-    if (permission == LocationPermission.deniedForever) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Location permissions are permanently denied, we cannot request permissions.')));
-      return false;
-    }
-    return true;
-  }
-
-  String? detectedCountryCode;
-  String? _currentAddress;
-  String? voyageType = 'allerSimple'; // Valeur par défaut
+  String? voyageType = 'allerSimple';
   DateTime? retourDate;
 
-  // Méthode pour sélectionner une date
-  Future<void> _selectDateRetour(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null && picked != retourDate) {
-      setState(() {
-        retourDate = picked;
-        dateRetourController.text =
-            "${retourDate!.toLocal()}".split(' ')[0]; // Formater la date
-      });
-    }
-  }
-
-  Future<void> _getCurrentPosition() async {
-    final hasPermission = await _handleLocationPermission();
-    if (!hasPermission) return;
-    await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
-        .then((Position position) {
-      setState(() => _currentPosition = position);
-      _getAddressFromLatLng(_currentPosition!);
-    }).catchError((e) {
-      debugPrint(e);
-    });
-  }
-
-  Future<void> _getAddressFromLatLng(Position position) async {
-    List<Placemark> placemarks =
-        await placemarkFromCoordinates(position.latitude, position.longitude);
-    await placemarkFromCoordinates(
-            _currentPosition!.latitude, _currentPosition!.longitude)
-        .then((List<Placemark> placemarks) {
-      Placemark place = placemarks[0];
-      setState(() {
-        _currentAddress =
-            '${place.street}, ${place.isoCountryCode}, ${place.subLocality},${place.subAdministrativeArea}, ${place.postalCode}';
-        detectedCountryCode = place.isoCountryCode!;
-
-        print(_currentAddress);
-      });
-    }).catchError((e) {
-      debugPrint(e);
-    });
-  }
+  List<Map<String, dynamic>> departList = [];
+  List<Map<String, dynamic>> destinationList = [];
 
   @override
   void initState() {
     super.initState();
-    _getCurrentPosition();
     fetchZoneDepart();
   }
 
-  List<Map<String, dynamic>> departList =
-      []; // Liste pour stocker les niveaux avec leurs détails
-  List<Map<String, dynamic>> destinationList =
-      []; // Liste pour stocker les niveaux avec leurs détails
+  @override
+  void dispose() {
+    dateAllerController.dispose();
+    dateRetourController.dispose();
+    super.dispose();
+  }
 
   Future<void> fetchZoneDepart() async {
     try {
       final response = await http.get(Uri.parse('$apiUrl/zone_depart.php'));
       if (response.statusCode == 200) {
-        List<dynamic> levelsJson = json.decode(response.body);
-        departList = levelsJson
-            .cast<Map<String, dynamic>>(); // Convertir en liste de maps
-        print('Data: ${response.body}');
-      } else {
-        print("Erreur de statut de réponse: ${response.statusCode}");
+        final List<dynamic> levelsJson = json.decode(response.body);
+        if (mounted) {
+          setState(() {
+            departList = levelsJson.cast<Map<String, dynamic>>();
+          });
+        }
       }
-      print('Data: ${response.body}');
-    } catch (e) {
-      // print("Erreur lors du chargement des zones de départ: $e");
-      print("Error fetching data: $e");
-    }
+    } catch (_) {}
   }
 
-  Future<List<Map<String, dynamic>>> fetchZoneDestination(id) async {
+  Future<List<Map<String, dynamic>>> fetchZoneDestination(int id) async {
     try {
       final response = await http
-          .get(Uri.parse("$apiUrl/zone_destination.php?idDepart=$id"));
+          .get(Uri.parse('$apiUrl/zone_destination.php?idDepart=$id'));
       if (response.statusCode == 200) {
-        List<dynamic> levelsJson = json.decode(response.body);
-        destinationList = levelsJson
-            .cast<Map<String, dynamic>>(); // Convertir en liste de maps
-        return destinationList; // Return the updated destinationList
-      } else {
-        print("Erreur de statut de réponse: ${response.statusCode}");
-        return []; // Return an empty list in case of error
+        final List<dynamic> levelsJson = json.decode(response.body);
+        destinationList = levelsJson.cast<Map<String, dynamic>>();
+        return destinationList;
       }
-    } catch (e) {
-      print("Erreur lors du chargement des zones de destination: $e");
-      return []; // Return an empty list in case of exception
-    }
+    } catch (_) {}
+    return [];
   }
-
-  // Future<void> fetchLevels() async {
-  //   try {
-  //     final response = await http.get(Uri.parse('http://api.yadebus.com/zone_depart.php'));
-  //     if (response.statusCode == 200) {
-  //       List<dynamic> levels = json.decode(response.body);
-  //       departList = List<String>.from(levels);
-  //     }
-  //   } catch (e) {
-  //     print("Erreur lors du chargement des zone de départ: $e");
-  //   }
-  // }
-  String? selectedDeparture; // Stocke la valeur sélectionnée
 
   Future<void> _selectDateAller(BuildContext context) async {
-    DateTime currentDate = DateTime.now();
-    DateTime? picked = await showDatePicker(
+    final DateTime now = DateTime.now();
+    final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: currentDate, // Date initiale
-      firstDate: currentDate, // Date minimale (date du jour)
-      lastDate: DateTime(2100), // Date maximale, vous pouvez la changer
-      helpText: 'Sélectionner une date ', // Texte d'aide
+      initialDate: now,
+      firstDate: now,
+      lastDate: DateTime(2100),
+      helpText: 'Sélectionner une date',
       cancelText: 'Annuler',
       confirmText: 'OK',
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: ThemeData.light(), // Ajustez le thème si nécessaire
-          child: child!,
-        );
-      },
+      builder: (ctx, child) => Theme(
+        data: ThemeData.light().copyWith(
+          colorScheme: const ColorScheme.light(primary: Color(0xFF2967FF)),
+        ),
+        child: child!,
+      ),
     );
-
-    if (picked != currentDate && picked != null) {
-      // Si une date a été sélectionnée, formater le mois et le jour avec deux chiffres
-      String formattedDate =
-          "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-
-      // Afficher la date formatée dans le TextFormField
-      dateAllerController.text = formattedDate;
+    if (picked != null) {
+      dateAllerController.text =
+          '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
     }
   }
 
-  final List<Map<String, String>> imageList = [
-    {'image': 'assets/images/colis-im.jpeg', 'name': 'Colis'},
-    {'image': 'assets/images/div-default.jpg', 'name': 'Divertissement'},
-    {'image': 'assets/images/rservation.jpg', 'name': 'Réservation'},
-    {'image': 'assets/images/gr-p.png', 'name': 'Groupes'},
-    {'image': 'assets/images/voyage-vol.jpeg', 'name': 'Voyage/Vol'},
-  ];
+  Future<void> _selectDateRetour(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+      cancelText: 'Annuler',
+      confirmText: 'OK',
+      builder: (ctx, child) => Theme(
+        data: ThemeData.light().copyWith(
+          colorScheme: const ColorScheme.light(primary: Color(0xFF2967FF)),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        retourDate = picked;
+        dateRetourController.text =
+            '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+      });
+    }
+  }
 
-  int _currentIndex = 0;
+  Widget _buildAutocomplete({
+    required List<Map<String, dynamic>> options,
+    required String hint,
+    required IconData icon,
+    required Color iconColor,
+    required String? Function(String?) validator,
+    required void Function(String) onSelected,
+  }) {
+    return Autocomplete<String>(
+      optionsBuilder: (TextEditingValue value) {
+        if (value.text.isEmpty) {
+          return options.map((e) => e['libelle'] as String);
+        }
+        final filtered = options.where((e) =>
+            e['libelle'] != null &&
+            e['libelle']
+                .toLowerCase()
+                .contains(value.text.toLowerCase()));
+        if (filtered.isEmpty) return ['Aucun résultat'];
+        return filtered.map((e) => e['libelle'] as String);
+      },
+      fieldViewBuilder: (ctx, ctrl, focus, onSubmit) {
+        return TextFormField(
+          validator: validator,
+          controller: ctrl,
+          focusNode: focus,
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, color: Colors.white70, size: 20),
+            hintText: hint,
+            hintStyle: const TextStyle(color: Colors.white60, fontSize: 14),
+            filled: true,
+            fillColor: Colors.white.withValues(alpha: 0.15),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Colors.white, width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.orangeAccent),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Colors.orangeAccent, width: 1.5),
+            ),
+          ),
+        );
+      },
+      optionsViewBuilder: (ctx, onSel, opts) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 0,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: MediaQuery.of(ctx).size.width * 0.88,
+              constraints: const BoxConstraints(maxHeight: 220),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ListView.separated(
+                padding: EdgeInsets.zero,
+                itemCount: opts.length,
+                separatorBuilder: (_, __) => const Divider(
+                    height: 1, color: Color(0xFFF3F4F6)),
+                itemBuilder: (ctx, i) {
+                  final opt = opts.elementAt(i);
+                  return ListTile(
+                    dense: true,
+                    leading: Icon(icon, color: _primary, size: 18),
+                    title: Text(opt,
+                        style: const TextStyle(
+                            fontSize: 14, color: Color(0xFF111827))),
+                    onTap: () => onSel(opt),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+      onSelected: onSelected,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // final controller = Get.put(DeepLinkController());
-    // if (controller.returnLink != null)
-    //   Text('Lien de retour: ${controller.returnLink}');
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: [
+          // Blue search area
+          Container(
+            color: _primary,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Form(
+              key: formkey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Trip type chips
+                  Row(
+                    children: [
+                      _tripChip('Aller simple', voyageType == 'allerSimple',
+                          () => setState(() => voyageType = 'allerSimple')),
+                      const SizedBox(width: 10),
+                      _tripChip('Aller retour', voyageType == 'allerRetour',
+                          () => setState(() => voyageType = 'allerRetour')),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
 
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Image.asset(
-                  height: 200,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  "assets/images/image_r2.png"),
-              Padding(
-                padding: const EdgeInsets.all(14.0),
-                child: Card(
-                  color: Colors.white,
-                  elevation: 1,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Form(
-                      key: formkey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Trouvez votre voyage ici',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 20),
-                          // Choix du type de voyage (Aller simple ou Aller retour)
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Radio<String>(
-                                      value: 'allerSimple',
-                                      groupValue: voyageType,
-                                      onChanged: (String? value) {
-                                        setState(() {
-                                          voyageType = value;
-                                        });
-                                      },
-                                    ),
-                                    const Text('Aller simple'),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    Radio<String>(
-                                      value: 'allerRetour',
-                                      groupValue: voyageType,
-                                      onChanged: (String? value) {
-                                        setState(() {
-                                          voyageType = value;
-                                        });
-                                      },
-                                    ),
-                                    const Text('Aller retour'),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
+                  // Depart
+                  _buildAutocomplete(
+                    options: departList,
+                    hint: 'Ville de départ',
+                    icon: Icons.location_on_rounded,
+                    iconColor: Colors.white70,
+                    validator: (val) => (val == null || val.isEmpty)
+                        ? 'Veuillez choisir une ville de départ'
+                        : null,
+                    onSelected: (selection) {
+                      final el = departList.firstWhere(
+                        (e) => e['libelle'] == selection,
+                        orElse: () => <String, dynamic>{},
+                      );
+                      if (el.isNotEmpty) {
+                        idDepart = el['idLevel'].toString();
+                        setState(() {
+                          nomDepart = selection;
+                          id = int.tryParse(idDepart!);
+                          destinationList = [];
+                        });
+                        fetchZoneDestination(id!).then((list) {
+                          setState(() => destinationList = list);
+                        });
+                      }
+                    },
+                  ),
 
-                          const SizedBox(height: 20),
-
-                          SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // isLoading
-                                // ? const Center(child: CircularProgressIndicator())
-                                // :
-                                Autocomplete<String>(
-                                  optionsBuilder:
-                                      (TextEditingValue textEditingValue) {
-                                    if (textEditingValue.text.isEmpty) {
-                                      return departList.map((element) =>
-                                          element['libelle'] as String);
-                                    }
-
-                                    // Filtrer les résultats en fonction de l'entrée de l'utilisateur
-                                    final filteredList = departList.where(
-                                        (element) =>
-                                            element['libelle'] != null &&
-                                            element['libelle']
-                                                .toLowerCase()
-                                                .contains(textEditingValue.text
-                                                    .toLowerCase()));
-
-                                    // Vérifier si aucun résultat ne correspond et retourner un message personnalisé
-                                    if (filteredList.isEmpty) {
-                                      return ["Aucun lieu de départ trouvé"];
-                                    }
-
-                                    // Transformer les résultats en Iterable<String> pour l'affichage
-                                    return filteredList
-                                        .map((element) => element['libelle']);
-                                  },
-                                  fieldViewBuilder: (context, controller,
-                                      focusNode, onFieldSubmitted) {
-                                    return TextFormField(
-                                      validator: (val) {
-                                        if (val == null || val.isEmpty) {
-                                          return "Veuillez choisir une ville de départ";
-                                        } else {
-                                          return null;
-                                        }
-                                      },
-                                      controller: controller,
-                                      focusNode: focusNode,
-                                      decoration: InputDecoration(
-                                        prefixIcon: Icon(Icons.location_on,
-                                            color: Colors.blueGrey[400]),
-                                        hintText: "Sélectionner un départ",
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                                vertical: 10, horizontal: 20),
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  optionsViewBuilder:
-                                      (context, onSelected, options) {
-                                    return Align(
-                                      alignment: Alignment.topLeft,
-                                      child: Material(
-                                        child: Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.9, // Limiter la largeur
-                                          constraints: BoxConstraints(
-                                            maxHeight:
-                                                200, // Limiter la hauteur
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black26,
-                                                blurRadius: 5,
-                                              ),
-                                            ],
-                                          ),
-                                          child: ListView.builder(
-                                            padding: EdgeInsets.zero,
-                                            itemCount: options.length,
-                                            itemBuilder: (context, index) {
-                                              final option =
-                                                  options.elementAt(index);
-                                              return ListTile(
-                                                title: Text(option),
-                                                onTap: () => onSelected(option),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  onSelected: (String selection) {
-                                    // Recherche de l'idLevel associé au libelle sélectionné
-                                    final selectedElement =
-                                        departList.firstWhere(
-                                      (element) =>
-                                          element['libelle'] == selection,
-                                      orElse: () => <String,
-                                          dynamic>{}, // Return an empty map instead of null
-                                    );
-
-                                    if (selectedElement.isNotEmpty) {
-                                      idDepart =
-                                          selectedElement['idLevel'].toString();
-                                      setState(() {
-                                        nomDepart = selection;
-                                        id = int.tryParse(
-                                            idDepart!); // Assign `id` by parsing `idDepart`
-                                        destinationList =
-                                            []; // Effacer la liste actuelle des destinations avant de charger de nouvelles données
-                                      });
-                                      print(
-                                          'Vous avez sélectionné: $selection, idLevel associé: $idDepart');
-                                      // Fetch new destinations based on the selected `idDepart`
-                                      fetchZoneDestination(id!)
-                                          .then((newDestinations) {
-                                        setState(() {
-                                          destinationList =
-                                              newDestinations; // Mettez à jour la liste des destinations
-                                          print("new liste" +
-                                              destinationList.toString());
-                                        });
-                                      });
-                                    } else {
-                                      print(
-                                          'Aucun idLevel trouvé pour le libelle sélectionné.');
-                                    }
-
-                                    print('Vous avez sélectionné: $selection');
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // Champ de texte pour la destination avec icône
-                          SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              // mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // isLoading
-                                // ? const Center(child: CircularProgressIndicator())
-                                // :
-                                Autocomplete<String>(
-                                  optionsBuilder:
-                                      (TextEditingValue textEditingValue) {
-                                    if (textEditingValue.text.isEmpty) {
-                                      // Retourne tous les libellés si aucun texte n'est saisi
-                                      return destinationList.map((element) =>
-                                          element['libelle'] as String);
-                                    }
-
-                                    // Filtrer les résultats en fonction de l'entrée de l'utilisateur
-                                    final filteredList = destinationList.where(
-                                        (element) =>
-                                            element['libelle'] != null &&
-                                            element['libelle']
-                                                .toLowerCase()
-                                                .contains(textEditingValue.text
-                                                    .toLowerCase()));
-
-                                    // Vérifier si aucun résultat ne correspond et retourner un message personnalisé
-                                    if (filteredList.isEmpty) {
-                                      return [
-                                        "Aucun lieu de destination trouvé"
-                                      ];
-                                    }
-
-                                    // Transformer les résultats en Iterable<String> pour l'affichage
-                                    return filteredList
-                                        .map((element) => element['libelle']);
-                                  },
-                                  fieldViewBuilder: (context, controller,
-                                      focusNode, onFieldSubmitted) {
-                                    return TextFormField(
-                                      validator: (val) {
-                                        if (val == null || val.isEmpty) {
-                                          return "Veuillez choisir une ville de destination";
-                                        } else {
-                                          return null;
-                                        }
-                                      },
-                                      controller: controller,
-                                      focusNode: focusNode,
-                                      decoration: InputDecoration(
-                                        prefixIcon: Icon(Icons.location_city,
-                                            color: Colors.blueGrey[400]),
-                                        hintText: "Sélectionner un destination",
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                                vertical: 10, horizontal: 20),
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  optionsViewBuilder:
-                                      (context, onSelected, options) {
-                                    return Align(
-                                      alignment: Alignment.topLeft,
-                                      child: Material(
-                                        child: Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.9, // Limiter la largeur
-                                          constraints: BoxConstraints(
-                                            maxHeight:
-                                                200, // Limiter la hauteur
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black26,
-                                                blurRadius: 5,
-                                              ),
-                                            ],
-                                          ),
-                                          child: ListView.builder(
-                                            padding: EdgeInsets.zero,
-                                            itemCount: options.length,
-                                            itemBuilder: (context, index) {
-                                              final option =
-                                                  options.elementAt(index);
-                                              return ListTile(
-                                                title: Text(option),
-                                                onTap: () => onSelected(option),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  onSelected: (String selection) {
-                                    // Recherche de l'idLevel associé au libelle sélectionné
-                                    final selectedElement =
-                                        destinationList.firstWhere(
-                                      (element) =>
-                                          element['libelle'] == selection,
-                                      orElse: () => <String,
-                                          dynamic>{}, // Return an empty map instead of null
-                                    );
-
-                                    if (selectedElement.isNotEmpty) {
-                                      setState(() {
-                                        nomDest = selection;
-                                      });
-                                      idDest =
-                                          selectedElement['idLevel'].toString();
-                                      idD = int.tryParse(
-                                          idDest!); // Assign `id` by parsing `idDepart`
-                                      print(
-                                          'Vous avez sélectionné: $selection, idLevel associé: $idDest');
-                                    } else {
-                                      print(
-                                          'Aucun idLevel trouvé pour le libelle sélectionné.');
-                                    }
-
-                                    print('Vous avez sélectionné: $selection');
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Champ de texte pour la date de départ
-                          GestureDetector(
-                            onTap: () => _selectDateAller(context),
-                            child: AbsorbPointer(
-                              child: TextFormField(
-                                controller: dateAllerController,
-                                decoration: InputDecoration(
-                                  prefixIcon: Icon(Icons.calendar_today,
-                                      color: Colors.blueGrey[400]),
-                                  hintText: "Sélectionner une date de départ",
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 10, horizontal: 20),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Afficher la date de retour si "Aller retour" est sélectionné
-                          if (voyageType == 'allerRetour')
-                            GestureDetector(
-                              onTap: () => _selectDateRetour(context),
-                              child: AbsorbPointer(
-                                child: TextFormField(
-                                  controller: dateRetourController,
-                                  decoration: InputDecoration(
-                                    prefixIcon: Icon(Icons.calendar_today,
-                                        color: Colors.blueGrey[400]),
-                                    hintText: "Sélectionner une date de retour",
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        vertical: 10, horizontal: 20),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                          const SizedBox(height: 5),
-
-                          // Bouton de recherche
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: SizedBox(
-                              height: 40,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  // Action à effectuer lors de l'appui sur le bouton
-                                  if (formkey.currentState!.validate()) {
-                                    Get.to(
-                                        VoyageScreen(
-                                            // Passer les données au screen de destination
-                                            idDepart: id,
-                                          idDest: idD,
-                                          dateDepart: dateAllerController.text,
-                                          dateRetour: dateRetourController.text,
-                                          nomDepart: nomDepart!,
-                                          nomDest: nomDest!,
-                                          idVoyageRetour: idD,
-                                          type: voyageType == 'allerSimple' ? 0 : 1,
-                                            ),
-                                        transition:
-                                            Transition.rightToLeftWithFade);
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                ),
-                                child: const Text(
-                                  'RECHERCHER UN BILLET',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                  // Swap button
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.2),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.5)),
+                        ),
+                        child: const Icon(Icons.swap_vert_rounded,
+                            color: Colors.white, size: 18),
                       ),
                     ),
                   ),
-                ),
+
+                  // Destination
+                  _buildAutocomplete(
+                    options: destinationList,
+                    hint: 'Destination',
+                    icon: Icons.location_on_rounded,
+                    iconColor: _orange,
+                    validator: (val) => (val == null || val.isEmpty)
+                        ? 'Veuillez choisir une ville de destination'
+                        : null,
+                    onSelected: (selection) {
+                      final el = destinationList.firstWhere(
+                        (e) => e['libelle'] == selection,
+                        orElse: () => <String, dynamic>{},
+                      );
+                      if (el.isNotEmpty) {
+                        setState(() => nomDest = selection);
+                        idDest = el['idLevel'].toString();
+                        idD = int.tryParse(idDest!);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Date aller + search button row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _selectDateAller(context),
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              controller: dateAllerController,
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 14),
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(
+                                    Icons.calendar_today_rounded,
+                                    color: Colors.white70,
+                                    size: 20),
+                                hintText: 'Date de départ',
+                                hintStyle: const TextStyle(
+                                    color: Colors.white60, fontSize: 14),
+                                suffixIcon: const Icon(
+                                    Icons.calendar_month_outlined,
+                                    color: Colors.white70,
+                                    size: 20),
+                                filled: true,
+                                fillColor:
+                                    Colors.white.withValues(alpha: 0.15),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 16),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                      color: Colors.white
+                                          .withValues(alpha: 0.3)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                      color: Colors.white
+                                          .withValues(alpha: 0.3)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: Colors.white, width: 1.5),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Orange search button
+                      GestureDetector(
+                        onTap: () {
+                          if (formkey.currentState!.validate()) {
+                            Get.to(
+                              VoyageScreen(
+                                idDepart: id,
+                                idDest: idD,
+                                dateDepart: dateAllerController.text,
+                                dateRetour: dateRetourController.text,
+                                nomDepart: nomDepart!,
+                                nomDest: nomDest!,
+                                idVoyageRetour: idD,
+                                type: voyageType == 'allerSimple' ? 0 : 1,
+                              ),
+                              transition: Transition.rightToLeftWithFade,
+                            );
+                          }
+                        },
+                        child: Container(
+                          width: 54,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF59E0B),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.search_rounded,
+                              color: Colors.white, size: 24),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  if (voyageType == 'allerRetour') ...[
+                    const SizedBox(height: 14),
+                    GestureDetector(
+                      onTap: () => _selectDateRetour(context),
+                      child: AbsorbPointer(
+                        child: TextFormField(
+                          controller: dateRetourController,
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 14),
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(
+                                Icons.calendar_today_rounded,
+                                color: Colors.white70,
+                                size: 20),
+                            hintText: 'Date de retour',
+                            hintStyle: const TextStyle(
+                                color: Colors.white60, fontSize: 14),
+                            filled: true,
+                            fillColor: Colors.white.withValues(alpha: 0.15),
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 16, horizontal: 16),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.3)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.3)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: Colors.white, width: 1.5),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ],
+            ),
+          ),
+
+          // Results hint
+          Container(
+            color: const Color(0xFFF5F7FA),
+            padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
+            child: const Center(
+              child: Column(
+                children: [
+                  Icon(Icons.search_rounded,
+                      size: 56, color: Color(0xFFD1D5DB)),
+                  SizedBox(height: 16),
+                  Text(
+                    'Remplissez le formulaire\net appuyez sur Rechercher',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 14, color: Color(0xFF9CA3AF), height: 1.6),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tripChip(String label, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? Colors.white
+              : Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? _primary : Colors.white,
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
       ),

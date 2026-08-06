@@ -4,13 +4,8 @@ import 'package:flutter_feather_icons/flutter_feather_icons.dart';
 
 import 'package:provider/provider.dart';
 import 'package:yade_bus/constant/constantes.dart';
-import 'package:yade_bus/screens/accueil.dart';
-import 'package:yade_bus/screens/divertissement.dart';
-import 'package:yade_bus/screens/home.dart';
-import 'package:yade_bus/screens/map.dart';
+import 'package:yade_bus/screens/main_screen.dart';
 import 'package:yade_bus/screens/profil_page.dart';
-import 'package:yade_bus/widgets/colis_form.dart';
-import 'package:yade_bus/widgets/voyage_form.dart';
 
 class BottomNavigationPage extends StatefulWidget {
   bool? isLogged;
@@ -45,7 +40,7 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
     GlobalKey<NavigatorState>(),
   ];
   List pages = <Widget>[
-    Accueil(),
+    MainScreen(),
     // VoyageForm(),
     // DivertissementScreen(),
     ProfilPage(),
@@ -148,7 +143,7 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
     return {
       '/': (context) {
         return [
-          Accueil(),
+          MainScreen(),
           // ColisTab(),
           // DivertissementScreen(),
           ProfilPage(),

@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-
-import '../../constant/constantes.dart';
 
 class ListeVoyageursPage extends StatefulWidget {
+  const ListeVoyageursPage({super.key});
+
   @override
-  _ListeVoyageursPageState createState() => _ListeVoyageursPageState();
+  State<ListeVoyageursPage> createState() => _ListeVoyageursPageState();
 }
 
 class _ListeVoyageursPageState extends State<ListeVoyageursPage> {
-  // Données fictives pour les voyages et les voyageurs
   TextEditingController dateController = TextEditingController();
 
   List<Map<String, dynamic>> voyages = [
@@ -53,26 +51,23 @@ class _ListeVoyageursPageState extends State<ListeVoyageursPage> {
     DateTime currentDate = DateTime.now();
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: currentDate, // Date initiale
-      firstDate: currentDate, // Date minimale (date du jour)
-      lastDate: DateTime(2100), // Date maximale, vous pouvez la changer
-      helpText: 'Sélectionner une date ', // Texte d'aide
+      initialDate: currentDate,
+      firstDate: currentDate,
+      lastDate: DateTime(2100),
+      helpText: 'Sélectionner une date ',
       cancelText: 'Annuler',
       confirmText: 'OK',
       builder: (BuildContext context, Widget? child) {
         return Theme(
-          data: ThemeData.light(), // Ajustez le thème si nécessaire
+          data: ThemeData.light(),
           child: child!,
         );
       },
     );
 
     if (picked != currentDate && picked != null) {
-      // Si une date a été sélectionnée, formater le mois et le jour avec deux chiffres
       String formattedDate =
           "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-
-      // Afficher la date formatée dans le TextFormField
       dateController.text = formattedDate;
     }
   }
@@ -80,100 +75,216 @@ class _ListeVoyageursPageState extends State<ListeVoyageursPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: Colors.blue[900],
-        title: const Text('Liste des Voyageurs',
-            style: TextStyle(color: Colors.white)),
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-        ),
-      ),
+      backgroundColor: const Color(0xFFF5F7FA),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
+          // ── Custom top bar ──────────────────────────────────────────
+          Container(
+            color: Colors.white,
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 8,
+              bottom: 12,
+              left: 8,
+              right: 16,
+            ),
+            child: Row(
               children: [
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    labelText: 'Départ',
-                    contentPadding: const EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 20),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(
+                    Icons.arrow_back_ios,
+                    color: Color(0xFF111827),
+                    size: 20,
                   ),
-                  value: selectedDepart,
-                  items: voyages.map((voyage) {
-                    return DropdownMenuItem<String>(
-                      value: voyage['depart'],
-                      child: Text(voyage['depart']),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedDepart = value;
-                    });
-                  },
                 ),
-                SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 20),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    labelText: 'Destination',
-                  ),
-                  value: selectedDestination,
-                  items: voyages.map((voyage) {
-                    return DropdownMenuItem<String>(
-                      value: voyage['destination'],
-                      child: Text(voyage['destination']),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedDestination = value;
-                    });
-                  },
-                ),
-                SizedBox(height: 10),
-                GestureDetector(
-                  onTap: () => _selectDate(context),
-                  child: AbsorbPointer(
-                    child: TextFormField(
-                      controller: dateController,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.calendar_today,
-                            color: Colors.blueGrey[400]),
-                        hintText: "Sélectionner une date",
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 20),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      //     validator: (val) {
-                      // if (val == null || val.isEmpty) {
-                      //   return "Veuillez choisir une date";
-                      // } else {
-                      //   return null;
-                      // }
-                      // }
+                const Expanded(
+                  child: Text(
+                    'Liste des voyageurs',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111827),
                     ),
                   ),
                 ),
               ],
             ),
           ),
+
+          // ── Blue header banner ──────────────────────────────────────
+          Container(
+            width: double.infinity,
+            color: const Color(0xFF2967FF),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+            child: const Text(
+              'Filtrez par trajet et date',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+
+          // ── Filter card ─────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF111827).withValues(alpha: 0.07),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // Departure dropdown
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(
+                        Icons.directions_bus_rounded,
+                        color: Color(0xFF2967FF),
+                        size: 20,
+                      ),
+                      hintText: 'Départ',
+                      hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                      filled: true,
+                      fillColor: const Color(0xFFF5F7FA),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14, horizontal: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF2967FF), width: 1.5),
+                      ),
+                    ),
+                    value: selectedDepart,
+                    style: const TextStyle(
+                        color: Color(0xFF111827), fontSize: 14),
+                    dropdownColor: Colors.white,
+                    items: voyages.map((voyage) {
+                      return DropdownMenuItem<String>(
+                        value: voyage['depart'] as String,
+                        child: Text(voyage['depart'] as String),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedDepart = value;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Destination dropdown
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(
+                        Icons.location_on_rounded,
+                        color: Color(0xFF2967FF),
+                        size: 20,
+                      ),
+                      hintText: 'Destination',
+                      hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                      filled: true,
+                      fillColor: const Color(0xFFF5F7FA),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14, horizontal: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF2967FF), width: 1.5),
+                      ),
+                    ),
+                    value: selectedDestination,
+                    style: const TextStyle(
+                        color: Color(0xFF111827), fontSize: 14),
+                    dropdownColor: Colors.white,
+                    items: voyages.map((voyage) {
+                      return DropdownMenuItem<String>(
+                        value: voyage['destination'] as String,
+                        child: Text(voyage['destination'] as String),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedDestination = value;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Date field
+                  GestureDetector(
+                    onTap: () => _selectDate(context),
+                    child: AbsorbPointer(
+                      child: TextFormField(
+                        controller: dateController,
+                        style: const TextStyle(
+                            color: Color(0xFF111827), fontSize: 14),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(
+                            Icons.calendar_today_rounded,
+                            color: Color(0xFF2967FF),
+                            size: 20,
+                          ),
+                          hintText: 'Sélectionner une date',
+                          hintStyle:
+                              const TextStyle(color: Color(0xFF9CA3AF)),
+                          filled: true,
+                          fillColor: const Color(0xFFF5F7FA),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14, horizontal: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Color(0xFF2967FF), width: 1.5),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Voyager list ────────────────────────────────────────────
           Expanded(
             child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
               itemCount: voyages
                   .where((voyage) =>
                       (selectedDepart == null ||
@@ -200,7 +311,7 @@ class _ListeVoyageursPageState extends State<ListeVoyageursPage> {
                     .toList();
 
                 if (filteredVoyages.isEmpty) {
-                  return Container(); // Ne rien afficher si aucun résultat n'est trouvé
+                  return const SizedBox.shrink();
                 }
 
                 int currentVoyageIndex = 0;
@@ -214,13 +325,98 @@ class _ListeVoyageursPageState extends State<ListeVoyageursPage> {
                 }
 
                 final voyage = filteredVoyages[currentVoyageIndex];
-                final voyageur = voyage['voyageurs'][currentVoyageurIndex];
+                final voyageur =
+                    voyage['voyageurs'][currentVoyageurIndex];
 
-                return ListTile(
-                  leading: Icon(Icons.person),
-                  title: Text(voyageur['nom']),
-                  subtitle: Text('Destination: ${voyage['destination']}'),
-                  trailing: Text('Siège ${voyageur['siege']}'),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF111827).withValues(alpha: 0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 14),
+                    child: Row(
+                      children: [
+                        // Avatar
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2967FF),
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          child: const Icon(
+                            Icons.person_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+
+                        // Name + destination
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                voyageur['nom'] as String,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF111827),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on_rounded,
+                                    color: Color(0xFF9CA3AF),
+                                    size: 13,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    voyage['destination'] as String,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF9CA3AF),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Seat chip
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            voyageur['siege'] as String,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF2967FF),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               },
             ),
